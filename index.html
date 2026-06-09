@@ -3,376 +3,234 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Scouted Games — Free-to-keep games, scouted across every store</title>
-<meta name="description" content="Currently free games you keep forever, scouted across Steam, Epic, GOG, Xbox, PlayStation, Nintendo and more." />
+<title>Scouted — Scored. Sorted.</title>
+<meta name="description" content="Game rankings, scores, and free games — scouted so you know what's worth playing." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
-<style>
-  :root {
-    --bg:        #0b0e0c;
-    --bg-2:      #0f1411;
-    --surface:   #141a16;
-    --surface-2: #1a221c;
-    --line:      #2a342c;
-    --line-soft: #1f2821;
-    --text:      #e9efe9;
-    --muted:     #8b978c;
-    --faint:     #5d685f;
-    --signal:    #c7f549;   /* scout signal lime */
-    --signal-dim:#9fc23a;
-    --amber:     #ffb454;   /* "ending soon" */
-    --radius:    14px;
-  }
-
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-
-  html { scroll-behavior: smooth; }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: "Hanken Grotesk", system-ui, sans-serif;
-    -webkit-font-smoothing: antialiased;
-    min-height: 100vh;
-    position: relative;
-    overflow-x: hidden;
-  }
-
-  /* Atmospheric layered background: topographic-ish grid + glow + grain */
-  body::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    background-image:
-      linear-gradient(rgba(199,245,73,0.035) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(199,245,73,0.035) 1px, transparent 1px);
-    background-size: 46px 46px;
-    -webkit-mask-image: radial-gradient(ellipse 90% 60% at 50% 0%, #000 0%, transparent 75%);
-    mask-image: radial-gradient(ellipse 90% 60% at 50% 0%, #000 0%, transparent 75%);
-    z-index: 0;
-    pointer-events: none;
-  }
-  body::after {
-    content: "";
-    position: fixed;
-    inset: 0;
-    background:
-      radial-gradient(circle at 15% -5%, rgba(199,245,73,0.10), transparent 40%),
-      radial-gradient(circle at 92% 8%, rgba(96,160,90,0.08), transparent 38%);
-    z-index: 0;
-    pointer-events: none;
-  }
-
-  .wrap { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto; padding: 0 22px; }
-
-  /* ---------- Top bar ---------- */
-  header { padding: 30px 0 14px; }
-  .topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
-  .brand { display: flex; align-items: center; gap: 13px; }
-  .mark {
-    width: 40px; height: 40px; flex: none;
-    border: 1.5px solid var(--signal);
-    border-radius: 9px;
-    display: grid; place-items: center;
-    position: relative;
-    box-shadow: 0 0 22px rgba(199,245,73,0.18), inset 0 0 14px rgba(199,245,73,0.06);
-  }
-  .mark::before { /* crosshair / scout reticle */
-    content: ""; position: absolute; inset: 0;
-    background:
-      linear-gradient(var(--signal), var(--signal)) center/1.5px 12px no-repeat,
-      linear-gradient(var(--signal), var(--signal)) center/12px 1.5px no-repeat;
-    opacity: .9;
-  }
-  .mark::after {
-    content: ""; position: absolute; width: 6px; height: 6px; border-radius: 50%;
-    background: var(--signal); box-shadow: 0 0 10px var(--signal);
-  }
-  .brand h1 {
-    font-family: "Chakra Petch", sans-serif;
-    font-weight: 700; font-size: 1.42rem; letter-spacing: .06em;
-    line-height: 1;
-  }
-  .brand h1 .dot { color: var(--signal); }
-  .brand .sub {
-    font-family: "JetBrains Mono", monospace;
-    font-size: .62rem; letter-spacing: .26em; text-transform: uppercase;
-    color: var(--faint); margin-top: 5px;
-  }
-  .status {
-    font-family: "JetBrains Mono", monospace;
-    font-size: .68rem; letter-spacing: .08em; color: var(--muted);
-    display: flex; align-items: center; gap: 9px;
-    border: 1px solid var(--line); border-radius: 999px; padding: 7px 14px;
-    background: rgba(20,26,22,0.6);
-  }
-  .pulse { width: 7px; height: 7px; border-radius: 50%; background: var(--signal); box-shadow: 0 0 0 0 rgba(199,245,73,.6); animation: pulse 2.2s infinite; }
-  @keyframes pulse { 0%{box-shadow:0 0 0 0 rgba(199,245,73,.5)} 70%{box-shadow:0 0 0 8px rgba(199,245,73,0)} 100%{box-shadow:0 0 0 0 rgba(199,245,73,0)} }
-
-  /* ---------- Hero ---------- */
-  .hero { padding: 30px 0 26px; border-bottom: 1px solid var(--line-soft); }
-  .eyebrow {
-    font-family: "JetBrains Mono", monospace; font-size: .7rem; letter-spacing: .24em;
-    text-transform: uppercase; color: var(--signal-dim); margin-bottom: 16px;
-    display: flex; align-items: center; gap: 10px;
-  }
-  .eyebrow::before { content: ""; width: 26px; height: 1px; background: var(--signal-dim); }
-  .hero h2 {
-    font-family: "Chakra Petch", sans-serif; font-weight: 700;
-    font-size: clamp(2rem, 5.4vw, 3.5rem); line-height: 1.02; letter-spacing: -.01em;
-    max-width: 16ch;
-  }
-  .hero h2 em { font-style: normal; color: var(--signal); }
-  .hero p { color: var(--muted); margin-top: 18px; max-width: 56ch; font-size: 1.02rem; line-height: 1.6; }
-  .count-big { font-family: "JetBrains Mono", monospace; color: var(--text); }
-
-  /* ---------- Grid ---------- */
-  .section-head {
-    display: flex; align-items: baseline; justify-content: space-between;
-    margin: 34px 0 18px; gap: 12px; flex-wrap: wrap;
-  }
-  .section-head h3 {
-    font-family: "Chakra Petch", sans-serif; font-weight: 600; letter-spacing: .04em;
-    font-size: 1.05rem; text-transform: uppercase;
-  }
-  .section-head .meta { font-family: "JetBrains Mono", monospace; font-size: .7rem; color: var(--faint); letter-spacing: .1em; }
-
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(264px, 1fr));
-    gap: 18px;
-    padding-bottom: 70px;
-  }
-
-  .card {
-    background: linear-gradient(180deg, var(--surface), var(--bg-2));
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    overflow: hidden;
-    display: flex; flex-direction: column;
-    position: relative;
-    transition: transform .25s cubic-bezier(.2,.7,.3,1), border-color .25s, box-shadow .25s;
-    opacity: 0; transform: translateY(14px);
-    animation: rise .5s forwards;
-  }
-  @keyframes rise { to { opacity: 1; transform: none; } }
-  .card:hover { transform: translateY(-4px); border-color: var(--signal-dim); box-shadow: 0 14px 38px rgba(0,0,0,.5), 0 0 0 1px rgba(199,245,73,.25); }
-
-  .thumb { position: relative; aspect-ratio: 16/9; background: #0a0d0b; overflow: hidden; }
-  .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .4s ease, opacity .3s; }
-  .card:hover .thumb img { transform: scale(1.05); }
-  .thumb::after { content:""; position:absolute; inset:0; background: linear-gradient(180deg, transparent 45%, rgba(11,14,12,.85)); }
-
-  .free-badge {
-    position: absolute; top: 11px; left: 11px; z-index: 2;
-    font-family: "JetBrains Mono", monospace; font-weight: 700; font-size: .66rem;
-    letter-spacing: .14em; text-transform: uppercase;
-    background: var(--signal); color: #0a0d06;
-    padding: 5px 10px; border-radius: 6px;
-    box-shadow: 0 2px 14px rgba(199,245,73,.4);
-  }
-  .deadline-tag {
-    position: absolute; bottom: 11px; left: 11px; z-index: 2;
-    font-family: "JetBrains Mono", monospace; font-size: .66rem; letter-spacing: .06em;
-    color: var(--text); background: rgba(10,13,11,.72); backdrop-filter: blur(4px);
-    border: 1px solid var(--line); padding: 4px 9px; border-radius: 6px;
-    display: flex; align-items: center; gap: 6px;
-  }
-  .deadline-tag.urgent { color: var(--amber); border-color: rgba(255,180,84,.4); }
-  .deadline-tag.forever { color: var(--signal); }
-
-  .body { padding: 15px 15px 16px; display: flex; flex-direction: column; gap: 11px; flex: 1; }
-  .card h4 { font-size: 1.04rem; font-weight: 700; line-height: 1.25; letter-spacing: -.01em; }
-  .platforms { display: flex; flex-wrap: wrap; gap: 6px; }
-  .ptag {
-    font-family: "JetBrains Mono", monospace; font-size: .6rem; letter-spacing: .08em;
-    text-transform: uppercase; color: var(--muted);
-    border: 1px solid var(--line); border-radius: 5px; padding: 3px 7px;
-    background: var(--surface-2);
-  }
-  .price-row { display: flex; align-items: baseline; gap: 10px; margin-top: auto; }
-  .was { font-family: "JetBrains Mono", monospace; font-size: .82rem; color: var(--faint); text-decoration: line-through; }
-  .now { font-family: "Chakra Petch", sans-serif; font-weight: 700; font-size: .9rem; color: var(--signal); letter-spacing: .06em; }
-
-  .claim {
-    display: flex; align-items: center; justify-content: space-between;
-    text-decoration: none; margin-top: 2px;
-    background: var(--surface-2); border: 1px solid var(--line);
-    color: var(--text); border-radius: 9px; padding: 11px 14px;
-    font-weight: 600; font-size: .9rem;
-    transition: background .2s, border-color .2s, color .2s;
-  }
-  .claim:hover { background: var(--signal); color: #0a0d06; border-color: var(--signal); }
-  .claim .arrow { font-family: "JetBrains Mono", monospace; transition: transform .2s; }
-  .claim:hover .arrow { transform: translateX(3px); }
-
-  /* ---------- States ---------- */
-  .note {
-    font-family: "JetBrains Mono", monospace; font-size: .72rem; letter-spacing: .06em;
-    color: var(--amber); border: 1px dashed rgba(255,180,84,.4); background: rgba(255,180,84,.06);
-    border-radius: 8px; padding: 10px 14px; margin: 18px 0 0; display: none;
-  }
-  .loading, .empty { text-align: center; padding: 60px 20px; color: var(--muted); font-family: "JetBrains Mono", monospace; letter-spacing: .08em; font-size: .85rem; }
-  .skel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
-  .skel .sk-thumb { aspect-ratio: 16/9; background: linear-gradient(100deg, var(--surface) 30%, var(--surface-2) 50%, var(--surface) 70%); background-size: 200% 100%; animation: shimmer 1.3s infinite; }
-  .skel .sk-line { height: 12px; margin: 14px 15px; border-radius: 4px; background: linear-gradient(100deg, var(--surface-2) 30%, var(--line) 50%, var(--surface-2) 70%); background-size: 200% 100%; animation: shimmer 1.3s infinite; }
-  .skel .sk-line.short { width: 50%; }
-  @keyframes shimmer { to { background-position: -200% 0; } }
-
-  footer { border-top: 1px solid var(--line-soft); padding: 26px 0 50px; color: var(--faint); font-size: .8rem; line-height: 1.7; }
-  footer a { color: var(--muted); }
-  footer .mono { font-family: "JetBrains Mono", monospace; font-size: .68rem; letter-spacing: .08em; }
-
-  @media (max-width: 560px) {
-    .grid { grid-template-columns: 1fr 1fr; gap: 12px; }
-    .card h4 { font-size: .92rem; }
-    .claim { padding: 9px 11px; font-size: .82rem; }
-  }
-</style>
+<link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <div class="topbar">
-        <div class="brand">
-          <div class="mark" aria-hidden="true"></div>
-          <div>
-            <h1>SCOUTED<span class="dot">.</span></h1>
-            <div class="sub">Recon for free games</div>
-          </div>
-        </div>
-        <div class="status"><span class="pulse"></span><span id="status-text">Scanning storefronts…</span></div>
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="brand" href="index.html">
+        <span class="mark" aria-hidden="true"></span>
+        <span>
+          <h1>SCOUTED<span class="dot">.</span></h1>
+          <span class="tagline">Scouted. Scored. Sorted.</span>
+        </span>
+      </a>
+      <div class="nav-links">
+        <a class="nav-link active" href="index.html">Home</a>
+        <a class="nav-link" href="rankings.html">Rankings</a>
+        <a class="nav-link" href="free.html">Free Games</a>
       </div>
-    </header>
+    </div>
+  </nav>
 
-    <section class="hero">
-      <div class="eyebrow">Free to keep · not a trial</div>
-      <h2>Games that are <em>free right now</em>, scouted before you miss them.</h2>
-      <p><span class="count-big" id="hero-count">—</span> titles currently free to claim and keep forever across Steam, Epic, GOG, itch.io, Xbox, PlayStation, Nintendo and more. Refreshed automatically.</p>
-      <div class="note" id="preview-note">⚠ Preview mode — showing sample data. Live data loads once this is deployed to Cloudflare.</div>
+  <div class="wrap">
+    <section class="intro">
+      <div class="eyebrow">Scouting report</div>
+      <h2>The games worth your time, <em>ranked and scouted</em>.</h2>
+      <p>Top releases, the year's best, what's coming next, and the best free games to grab right now — all in one place.</p>
     </section>
 
-    <div class="section-head">
-      <h3>Currently Free</h3>
-      <span class="meta" id="updated">—</span>
-    </div>
+    <!-- RAIL 1: Top releases last month -->
+    <section class="rail">
+      <div class="rail-head">
+        <div>
+          <h3>Top Releases <span class="rail-tag">Placeholder data</span></h3>
+          <div class="sub" id="sub-lastmonth">The 10 best-reviewed games from last month, best to worst.</div>
+        </div>
+        <div class="rail-ctrls">
+          <button class="rail-btn" data-dir="prev" aria-label="Scroll left">‹</button>
+          <button class="rail-btn" data-dir="next" aria-label="Scroll right">›</button>
+        </div>
+      </div>
+      <div class="rail-track" id="rail-lastmonth"></div>
+    </section>
 
-    <main class="grid" id="grid" aria-live="polite"></main>
+    <!-- RAIL 2: Most anticipated this month -->
+    <section class="rail">
+      <div class="rail-head">
+        <div>
+          <h3>Most Anticipated <span class="rail-tag">Placeholder data</span></h3>
+          <div class="sub" id="sub-anticipated">What players are hyped for this month.</div>
+        </div>
+        <div class="rail-ctrls">
+          <button class="rail-btn" data-dir="prev" aria-label="Scroll left">‹</button>
+          <button class="rail-btn" data-dir="next" aria-label="Scroll right">›</button>
+        </div>
+      </div>
+      <div class="rail-track" id="rail-anticipated"></div>
+    </section>
+
+    <!-- RAIL 3: Top of the year -->
+    <section class="rail">
+      <div class="rail-head">
+        <div>
+          <h3>Top of <span id="year-label">2026</span> <span class="rail-tag">Placeholder data</span></h3>
+          <div class="sub">The highest-rated games of the year so far.</div>
+        </div>
+        <div class="rail-ctrls">
+          <button class="rail-btn" data-dir="prev" aria-label="Scroll left">‹</button>
+          <button class="rail-btn" data-dir="next" aria-label="Scroll right">›</button>
+        </div>
+      </div>
+      <div class="rail-track" id="rail-ytd"></div>
+    </section>
+
+    <!-- FREE GAMES (live, biggest value first) -->
+    <div class="section-head">
+      <h3>Free Right Now</h3>
+      <a class="see-all" href="free.html">See all free games →</a>
+    </div>
+    <p class="sub" style="color:var(--muted); margin:-8px 0 16px; font-size:.9rem;">The biggest savings, free to keep.</p>
+    <main class="grid four" id="free-grid" aria-live="polite"></main>
 
     <footer>
-      <div class="mono">SCOUTED.GAMES // v0.1 — free-games recon</div>
-      <p style="margin-top:8px;">Data via the <a href="https://www.gamerpower.com/" target="_blank" rel="noopener">GamerPower</a> giveaway tracker. Always verify regional availability and the offer window on the store page before claiming. Prices shown are the listed normal value.</p>
+      <div class="mono">SCOUTED // scouted. scored. sorted.</div>
+      <p style="margin-top:8px;">Rankings and scores are Scouted's own. Free-game data via <a href="https://www.gamerpower.com/" target="_blank" rel="noopener">GamerPower</a>. Always verify regional availability and the offer window on the store page before claiming.</p>
     </footer>
   </div>
 
 <script>
-  // ---- Sample data (used only when live data isn't reachable, e.g. preview) ----
-  const SAMPLE = [
-    {title:"Havendock (Epic Games) Giveaway", worth:"$19.99", image:"", platforms:"PC, Epic Games Store", end_date:"2026-04-02 23:59:00", open_giveaway_url:"https://www.gamerpower.com/open/havendock-epic-games-giveaway"},
-    {title:"Hyper Echelon (Epic Games) Giveaway", worth:"$19.99", image:"", platforms:"PC, Epic Games Store", end_date:"2026-04-02 23:59:00", open_giveaway_url:"https://www.gamerpower.com/open/hyper-echelon-epic-games-giveaway"},
-    {title:"SYMMETRY (Epic Games) Giveaway", worth:"$11.90", image:"", platforms:"PC, Epic Games Store", end_date:"2026-04-01 23:59:00", open_giveaway_url:"https://www.gamerpower.com/open/symmetry-epic-games-giveaway"},
-    {title:"Blood And Zombies (IndieGala) Giveaway", worth:"$14.99", image:"", platforms:"PC, DRM-Free", end_date:"N/A", open_giveaway_url:"https://www.gamerpower.com/open/blood-and-zombies-pc-giveaway"},
-    {title:"The Wreck (Mobile) Giveaway", worth:"$6.99", image:"", platforms:"Android, iOS", end_date:"2026-04-02 23:59:00", open_giveaway_url:"https://www.gamerpower.com/open/the-wreck-mobile-giveaway"},
-    {title:"Static Voice (Itch.io) Giveaway", worth:"$2.99", image:"", platforms:"PC, Itch.io, DRM-Free", end_date:"2026-04-01 23:59:00", open_giveaway_url:"https://www.gamerpower.com/open/static-voice-itch-io-giveaway"}
+  /* ===== PLACEHOLDER ranking data — swap these arrays for your real ranked data ===== */
+  const POOL = ["Ashen Vanguard","Tidewright","Neon Verdict","Hollow Cartographer","Starbound Reverie",
+    "Iron Liturgy","Pale Constellation","Drift & Ember","The Last Refrain","Verdant Hush",
+    "Ghostlight Atlas","Cinder & Salt","Halcyon Drive","Echoes of Vesper","Solstice Engine"];
+
+  const LAST_MONTH = Array.from({length:10}, (_,i) => ({
+    rank: i+1, title: POOL[i], score: 94 - i*2, meta: "PC · Console"
+  }));
+  const YTD = Array.from({length:10}, (_,i) => ({
+    rank: i+1, title: POOL[(i+5)%POOL.length], score: 96 - i, meta: "2026"
+  }));
+  const ANTICIPATED = Array.from({length:10}, (_,i) => ({
+    rank: i+1, title: POOL[(i+9)%POOL.length], hype: true, meta: "TBA"
+  }));
+
+  /* ===== Month/year labels ===== */
+  (function(){
+    const now = new Date();
+    const prev = new Date(now.getFullYear(), now.getMonth()-1, 1);
+    const monthName = d => d.toLocaleString([], {month:"long"});
+    document.getElementById("sub-lastmonth").textContent =
+      `The 10 best-reviewed games from ${monthName(prev)} ${prev.getFullYear()}, best to worst.`;
+    document.getElementById("sub-anticipated").textContent =
+      `What players are hyped for in ${monthName(now)}.`;
+    document.getElementById("year-label").textContent = now.getFullYear();
+  })();
+
+  /* ===== Ranking rails ===== */
+  const tierClass = s => s>=85 ? "high" : s>=70 ? "good" : s>=50 ? "mid" : "low";
+
+  function posterCard(item){
+    const a = document.createElement("a");
+    a.className = "poster";
+    a.href = item.url || "#";
+    const chip = item.hype
+      ? `<span class="hype-chip">Hype</span>`
+      : `<span class="score-chip ${tierClass(item.score)}">${item.score}</span>`;
+    a.innerHTML = `
+      <div class="poster-art">
+        <span class="rank-badge">#${item.rank}</span>
+        <span class="ghost-rank">${item.rank}</span>
+        ${chip}
+      </div>
+      <div class="poster-title">${item.title}</div>
+      <div class="poster-meta">${item.meta || ""}</div>`;
+    return a;
+  }
+  function fillRail(id, items){
+    const t = document.getElementById(id);
+    items.forEach(it => t.appendChild(posterCard(it)));
+  }
+  fillRail("rail-lastmonth", LAST_MONTH);
+  fillRail("rail-anticipated", ANTICIPATED);
+  fillRail("rail-ytd", YTD);
+
+  /* ===== Rail arrow controls ===== */
+  document.querySelectorAll(".rail").forEach(rail => {
+    const track = rail.querySelector(".rail-track");
+    const prev = rail.querySelector('[data-dir="prev"]');
+    const next = rail.querySelector('[data-dir="next"]');
+    const step = () => Math.max(track.clientWidth * 0.8, 200);
+    prev.addEventListener("click", () => track.scrollBy({left: -step(), behavior: "smooth"}));
+    next.addEventListener("click", () => track.scrollBy({left: step(), behavior: "smooth"}));
+    const update = () => {
+      prev.disabled = track.scrollLeft < 8;
+      next.disabled = track.scrollLeft + track.clientWidth >= track.scrollWidth - 8;
+    };
+    track.addEventListener("scroll", update);
+    window.addEventListener("resize", update);
+    update();
+  });
+
+  /* ===== Free games (top 4 by value) ===== */
+  const _future = (days) => new Date(Date.now() + days*86400000).toISOString().slice(0,19).replace("T"," ");
+  const FREE_SAMPLE = [
+    {title:"Songs of Conquest (Epic Games) Giveaway", worth:"$29.99", image:"", platforms:"PC, Epic Games Store", end_date:_future(3), open_giveaway_url:"#"},
+    {title:"Havendock (Epic Games) Giveaway", worth:"$19.99", image:"", platforms:"PC, Epic Games Store", end_date:_future(5), open_giveaway_url:"#"},
+    {title:"Wytchwood (Mobile) Giveaway", worth:"$4.99", image:"", platforms:"Android, iOS", end_date:_future(3), open_giveaway_url:"#"},
+    {title:"Flufftopia (Itch.io) Giveaway", worth:"$2.50", image:"", platforms:"PC, DRM-Free", end_date:_future(6), open_giveaway_url:"#"}
   ];
 
-  const grid = document.getElementById('grid');
-  const statusText = document.getElementById('status-text');
-  const heroCount = document.getElementById('hero-count');
-  const updated = document.getElementById('updated');
-  const previewNote = document.getElementById('preview-note');
-
-  function cleanTitle(t){
-    return (t || "")
-      .replace(/\s*giveaway\s*$/i, "")
-      .replace(/\s*\([^)]*\)\s*$/, "")
-      .trim() || t;
-  }
-
+  const freeGrid = document.getElementById("free-grid");
+  const cleanTitle = t => (t||"").replace(/\s*giveaway\s*$/i,"").replace(/\s*\([^)]*\)\s*$/,"").trim() || t;
+  const parseWorth = w => { if(!w||w==="N/A") return 0; const n = parseFloat(String(w).replace(/[^0-9.]/g,"")); return isNaN(n)?0:n; };
   function timeLeft(end){
-    if(!end || end === "N/A") return {label:"No deadline", cls:"forever", icon:"∞"};
-    const d = new Date(end.replace(' ', 'T'));
-    if(isNaN(d)) return {label:"Limited time", cls:"", icon:"◷"};
+    const d = new Date(end.replace(" ","T"));
     const diff = d - new Date();
-    if(diff <= 0) return {label:"Ended", cls:"", icon:"×"};
     const days = Math.floor(diff/86400000);
     const hrs = Math.floor((diff%86400000)/3600000);
-    let label = days >= 1 ? days + (days===1?" day left":" days left")
-                          : hrs + (hrs===1?" hr left":" hrs left");
-    return {label, cls: diff < 48*3600000 ? "urgent" : "", icon:"◷"};
+    const label = days >= 1 ? days+(days===1?" day left":" days left") : hrs+(hrs===1?" hr left":" hrs left");
+    return {label, urgent: diff < 48*3600000};
   }
+  function priceHTML(w){ return (!w||w==="N/A"||w==="$0.00") ? '<span class="now">FREE</span>' : '<span class="was">'+w+'</span><span class="now">FREE</span>'; }
 
-  function showPrice(worth){
-    if(!worth || worth === "N/A" || worth === "$0.00") return '<span class="now">FREE</span>';
-    return '<span class="was">'+worth+'</span><span class="now">FREE</span>';
+  function topByValue(items){
+    return (Array.isArray(items)?items:[])
+      .filter(g => g.end_date && g.end_date !== "N/A" && !isNaN(new Date(g.end_date.replace(" ","T"))) && (new Date(g.end_date.replace(" ","T")) - new Date()) > 0)
+      .sort((a,b) => parseWorth(b.worth) - parseWorth(a.worth))
+      .slice(0,4);
   }
-
-  function render(items){
-    grid.innerHTML = "";
-    if(!items.length){
-      grid.innerHTML = '<div class="empty" style="grid-column:1/-1;">No free games on the radar right now. Check back soon.</div>';
-      return;
-    }
-    items.forEach((g, i) => {
+  function renderFree(items){
+    freeGrid.innerHTML = "";
+    if(!items.length){ freeGrid.innerHTML = '<div class="empty">No free games on the radar right now.</div>'; return; }
+    items.forEach((g,i) => {
       const tl = timeLeft(g.end_date);
-      const platforms = (g.platforms || "").split(",").map(p=>p.trim()).filter(Boolean).slice(0,3);
+      const platforms = (g.platforms||"").split(",").map(p=>p.trim()).filter(Boolean).slice(0,2);
       const img = g.image || g.thumbnail || "";
-      const card = document.createElement('a');
-      card.className = "card";
-      card.href = g.open_giveaway_url || g.gamerpower_url || "#";
-      card.target = "_blank"; card.rel = "noopener";
-      card.style.animationDelay = (i * 45) + "ms";
-      card.style.textDecoration = "none";
-      card.innerHTML = `
+      const a = document.createElement("a");
+      a.className = "card"; a.href = g.open_giveaway_url || g.gamerpower_url || "#";
+      a.target = "_blank"; a.rel = "noopener"; a.style.animationDelay = (i*45)+"ms";
+      a.innerHTML = `
         <div class="thumb">
           <span class="free-badge">Free</span>
-          <span class="deadline-tag ${tl.cls}">${tl.icon} ${tl.label}</span>
+          <span class="deadline-tag ${tl.urgent?'urgent':''}">◷ ${tl.label}</span>
           ${img ? `<img src="${img}" alt="" loading="lazy" onerror="this.style.display='none'">` : ``}
         </div>
         <div class="body">
           <h4>${cleanTitle(g.title)}</h4>
           <div class="platforms">${platforms.map(p=>`<span class="ptag">${p}</span>`).join("")}</div>
-          <div class="price-row">${showPrice(g.worth)}</div>
+          <div class="price-row">${priceHTML(g.worth)}</div>
           <span class="claim">Claim it <span class="arrow">→</span></span>
         </div>`;
-      grid.appendChild(card);
+      freeGrid.appendChild(a);
     });
   }
-
-  function renderSkeletons(n=6){
-    grid.innerHTML = "";
-    for(let i=0;i<n;i++){
-      const s = document.createElement('div');
-      s.className = "skel";
-      s.innerHTML = `<div class="sk-thumb"></div><div class="sk-line"></div><div class="sk-line short"></div>`;
-      grid.appendChild(s);
-    }
-  }
-
-  function finish(items, live){
-    render(items);
-    heroCount.textContent = items.length;
-    statusText.textContent = live ? items.length + " live offers" : "Sample data";
-    updated.textContent = "Updated " + new Date().toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
-    if(!live) previewNote.style.display = "block";
-  }
-
-  async function load(){
-    renderSkeletons();
+  (async function(){
     try {
-      const res = await fetch('/api/giveaways', { headers: { 'accept':'application/json' } });
-      if(!res.ok) throw new Error('no endpoint');
+      const res = await fetch("/api/giveaways", {headers:{accept:"application/json"}});
+      if(!res.ok) throw new Error();
       const data = await res.json();
-      if(!Array.isArray(data)) throw new Error('bad data');
-      finish(data, true);
-    } catch (e) {
-      // Live helper not reachable (e.g. local preview / not yet deployed) -> sample data
-      finish(SAMPLE, false);
+      if(!Array.isArray(data)) throw new Error();
+      renderFree(topByValue(data));
+    } catch(e) {
+      renderFree(topByValue(FREE_SAMPLE));
     }
-  }
-
-  load();
+  })();
 </script>
 </body>
 </html>

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Free Games — Scouted</title>
+<meta name="description" content="Currently free games you keep forever, scouted across Steam, Epic, GOG, itch.io, Xbox, PlayStation, Nintendo and more." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="brand" href="index.html">
+        <span class="mark" aria-hidden="true"></span>
+        <span>
+          <h1>SCOUTED<span class="dot">.</span></h1>
+          <span class="tagline">Scouted. Scored. Sorted.</span>
+        </span>
+      </a>
+      <div class="nav-links">
+        <a class="nav-link" href="index.html">Home</a>
+        <a class="nav-link" href="rankings.html">Rankings</a>
+        <a class="nav-link active" href="free.html">Free Games</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="wrap">
+    <section class="intro">
+      <div class="eyebrow">Free to keep · not a trial</div>
+      <h2>Games that are <em>free right now</em>, scouted before you miss them.</h2>
+      <p><span id="hero-count">—</span> time-limited titles you can claim and keep forever across Steam, Epic, GOG, itch.io, Xbox, PlayStation, Nintendo and more — ordered by who's expiring first.</p>
+      <div class="note" id="preview-note">⚠ Preview mode — showing sample data. Live data loads once this is deployed to Cloudflare.</div>
+    </section>
+
+    <div class="section-head">
+      <h3>Currently Free</h3>
+      <span class="meta" id="updated">—</span>
+    </div>
+
+    <main class="grid" id="grid" aria-live="polite"></main>
+
+    <footer>
+      <div class="mono">SCOUTED // free-games recon</div>
+      <p style="margin-top:8px;">Data via the <a href="https://www.gamerpower.com/" target="_blank" rel="noopener">GamerPower</a> giveaway tracker. Always verify regional availability and the offer window on the store page before claiming. Prices shown are the listed normal value.</p>
+    </footer>
+  </div>
+
+<script>
+  const _future = (days) => new Date(Date.now() + days*86400000).toISOString().slice(0,19).replace("T"," ");
+  const SAMPLE = [
+    {title:"Static Voice (Itch.io) Giveaway", worth:"$2.99", image:"", platforms:"PC, Itch.io, DRM-Free", end_date:_future(1), open_giveaway_url:"#"},
+    {title:"SYMMETRY (Epic Games) Giveaway", worth:"$11.90", image:"", platforms:"PC, Epic Games Store", end_date:_future(3), open_giveaway_url:"#"},
+    {title:"Havendock (Epic Games) Giveaway", worth:"$19.99", image:"", platforms:"PC, Epic Games Store", end_date:_future(5), open_giveaway_url:"#"},
+    {title:"Hyper Echelon (Epic Games) Giveaway", worth:"$19.99", image:"", platforms:"PC, Epic Games Store", end_date:_future(8), open_giveaway_url:"#"},
+    {title:"The Wreck (Mobile) Giveaway", worth:"$6.99", image:"", platforms:"Android, iOS", end_date:_future(12), open_giveaway_url:"#"}
+  ];
+
+  const grid = document.getElementById("grid");
+  const heroCount = document.getElementById("hero-count");
+  const updated = document.getElementById("updated");
+  const previewNote = document.getElementById("preview-note");
+
+  const cleanTitle = t => (t||"").replace(/\s*giveaway\s*$/i,"").replace(/\s*\([^)]*\)\s*$/,"").trim() || t;
+
+  function timeLeft(end){
+    const d = new Date(end.replace(" ","T"));
+    const diff = d - new Date();
+    const days = Math.floor(diff/86400000);
+    const hrs = Math.floor((diff%86400000)/3600000);
+    const label = days >= 1 ? days+(days===1?" day left":" days left") : hrs+(hrs===1?" hr left":" hrs left");
+    return {label, urgent: diff < 48*3600000};
+  }
+  function priceHTML(w){ return (!w||w==="N/A"||w==="$0.00") ? '<span class="now">FREE</span>' : '<span class="was">'+w+'</span><span class="now">FREE</span>'; }
+
+  // deadline-only, future, soonest-expiring first
+  function prepare(items){
+    if(!Array.isArray(items)) return [];
+    return items
+      .filter(g => {
+        if(!g.end_date || g.end_date === "N/A") return false;
+        const d = new Date(g.end_date.replace(" ","T"));
+        return !isNaN(d) && (d - new Date()) > 0;
+      })
+      .sort((a,b) => new Date(a.end_date.replace(" ","T")) - new Date(b.end_date.replace(" ","T")));
+  }
+
+  function render(items){
+    grid.innerHTML = "";
+    if(!items.length){ grid.innerHTML = '<div class="empty">No time-limited free games on the radar right now. Check back soon.</div>'; return; }
+    items.forEach((g,i) => {
+      const tl = timeLeft(g.end_date);
+      const platforms = (g.platforms||"").split(",").map(p=>p.trim()).filter(Boolean).slice(0,3);
+      const img = g.image || g.thumbnail || "";
+      const a = document.createElement("a");
+      a.className = "card"; a.href = g.open_giveaway_url || g.gamerpower_url || "#";
+      a.target = "_blank"; a.rel = "noopener"; a.style.animationDelay = (i*45)+"ms";
+      a.innerHTML = `
+        <div class="thumb">
+          <span class="free-badge">Free</span>
+          <span class="deadline-tag ${tl.urgent?'urgent':''}">◷ ${tl.label}</span>
+          ${img ? `<img src="${img}" alt="" loading="lazy" onerror="this.style.display='none'">` : ``}
+        </div>
+        <div class="body">
+          <h4>${cleanTitle(g.title)}</h4>
+          <div class="platforms">${platforms.map(p=>`<span class="ptag">${p}</span>`).join("")}</div>
+          <div class="price-row">${priceHTML(g.worth)}</div>
+          <span class="claim">Claim it <span class="arrow">→</span></span>
+        </div>`;
+      grid.appendChild(a);
+    });
+  }
+  function renderSkeletons(n=8){
+    grid.innerHTML = "";
+    for(let i=0;i<n;i++){ const s=document.createElement("div"); s.className="skel"; s.innerHTML='<div class="sk-thumb"></div><div class="sk-line"></div><div class="sk-line short"></div>'; grid.appendChild(s); }
+  }
+  function finish(raw, live){
+    const items = prepare(raw);
+    render(items);
+    heroCount.textContent = items.length;
+    updated.textContent = "Updated " + new Date().toLocaleString([], {month:"short", day:"numeric", hour:"2-digit", minute:"2-digit"});
+    if(!live) previewNote.style.display = "block";
+  }
+  (async function(){
+    renderSkeletons();
+    try {
+      const res = await fetch("/api/giveaways", {headers:{accept:"application/json"}});
+      if(!res.ok) throw new Error();
+      const data = await res.json();
+      if(!Array.isArray(data)) throw new Error();
+      finish(data, true);
+    } catch(e) { finish(SAMPLE, false); }
+  })();
+</script>
+</body>
+</html>
