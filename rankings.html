@@ -4,45 +4,131 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Game Rankings — Scouted</title>
-<meta name="description" content="Scouted's game rankings and scores — coming soon." />
+<meta name="description" content="Scouted's own scored, sorted ranking of 2026 game releases." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="styles.css" />
+<link rel="stylesheet" href="/styles.css" />
+<style>
+  /* page-specific tweaks (everything else comes from styles.css) */
+  .rank-meta { font-family:"JetBrains Mono",monospace; font-size:.7rem; letter-spacing:.1em; color:var(--faint); margin:2px 0 18px; }
+  .price-tag { font-family:"JetBrains Mono",monospace; font-size:.78rem; color:var(--muted); }
+  .price-tag.free { color:var(--signal); }
+  .prov { font-family:"JetBrains Mono",monospace; font-size:.56rem; letter-spacing:.1em; text-transform:uppercase;
+          color:var(--faint); border:1px dashed var(--line); border-radius:5px; padding:2px 6px; margin-left:auto; }
+  .score-chip.prov-chip { border-style:dashed; }
+  .card .body h4 { color:#fff; }
+</style>
 </head>
 <body>
   <nav class="nav">
     <div class="nav-inner">
-      <a class="brand" href="index.html">
+      <a class="brand" href="/">
         <span class="mark" aria-hidden="true"></span>
         <span>
           <h1>SCOUTED<span class="dot">.</span></h1>
-          <span class="tagline">Scouted. Scored. Sorted.</span>
+          <span class="tagline">Know what's worth playing</span>
         </span>
       </a>
       <div class="nav-links">
-        <a class="nav-link" href="index.html">Home</a>
-        <a class="nav-link active" href="rankings.html">Rankings</a>
-        <a class="nav-link" href="free.html">Free Games</a>
+        <a class="nav-link" href="/">Home</a>
+        <a class="nav-link active" href="/rankings.html">Rankings</a>
+        <a class="nav-link" href="/free.html">Free Games</a>
       </div>
     </div>
   </nav>
 
   <div class="wrap">
     <section class="intro">
-      <div class="eyebrow">In the works</div>
-      <h2>Game rankings, <em>scored and sorted</em>.</h2>
-      <p>This is where Scouted's own scoring system lives — a curated, opinionated ranking of releases built to help you decide what's actually worth playing. We'll build this out next.</p>
+      <div class="eyebrow">Scouting report</div>
+      <h2>The <em>2026</em> slate, scored and sorted.</h2>
+      <p>Every scorable 2026 release, ranked high to low by Scouted's own score. A dashed chip means the score is provisional — a Ghost Score standing in until an official critic score lands.</p>
     </section>
 
-    <div style="border:1px dashed var(--line); border-radius:14px; padding:48px 24px; text-align:center; margin-top:18px; color:var(--muted); font-family:'JetBrains Mono',monospace; letter-spacing:.06em;">
-      Rankings coming soon. Your scored data since 2022 will power this page.
-    </div>
+    <div class="rank-meta" id="rank-meta">Loading rankings…</div>
+
+    <main class="grid" id="grid" aria-live="polite"></main>
 
     <footer>
       <div class="mono">SCOUTED // rankings</div>
-      <p style="margin-top:8px;">Scores and rankings are Scouted's own, curated to help players decide what to play.</p>
+      <p style="margin-top:8px;">Scores and rankings are Scouted's own. Game data and artwork via
+        <a href="https://rawg.io" target="_blank" rel="noopener">RAWG</a> and
+        <a href="https://store.steampowered.com" target="_blank" rel="noopener">Steam</a>.</p>
     </footer>
   </div>
+
+<script>
+  const grid = document.getElementById("grid");
+  const meta = document.getElementById("rank-meta");
+
+  const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));
+  const tierClass = s => s >= 85 ? "high" : s >= 70 ? "good" : s >= 50 ? "mid" : "low";
+  const splitPlatforms = p => String(p || "").split(/[,|]/).map(x => x.trim()).filter(Boolean);
+  const isFree = p => !p || /^free$/i.test(p.trim());
+
+  function rankCard(g, rank) {
+    const el = document.createElement(g.url ? "a" : "div");
+    el.className = "card";
+    if (g.url) { el.href = g.url; el.target = "_blank"; el.rel = "noopener"; }
+    el.style.animationDelay = (Math.min(rank, 24) * 30) + "ms";
+
+    const plats = splitPlatforms(g.platforms).slice(0, 3).map(p => '<span class="ptag">' + esc(p) + '</span>').join("");
+    const flags = (g.ea ? '<span class="ptag">EA</span>' : "") + (g.port ? '<span class="ptag">Port</span>' : "");
+    const chipCls = tierClass(g.score) + (g.official ? "" : " prov-chip");
+    const price = isFree(g.price)
+      ? '<span class="price-tag free">Free</span>'
+      : '<span class="price-tag">' + esc(g.price) + '</span>';
+    const prov = g.official ? "" : '<span class="prov">provisional</span>';
+
+    el.innerHTML = `
+      <div class="thumb">
+        <span class="rank-badge">#${rank}</span>
+        <span class="score-chip ${chipCls}">${g.score}</span>
+        ${g.cover ? `<img src="${esc(g.cover)}" alt="" loading="lazy" onerror="this.style.display='none'">` : ``}
+      </div>
+      <div class="body">
+        <h4>${esc(g.game)}</h4>
+        <div class="platforms">${plats}${flags}</div>
+        <div class="price-row">${price}${prov}</div>
+      </div>`;
+    return el;
+  }
+
+  function renderSkeletons(n = 8) {
+    grid.innerHTML = "";
+    for (let i = 0; i < n; i++) {
+      const s = document.createElement("div");
+      s.className = "skel";
+      s.innerHTML = '<div class="sk-thumb"></div><div class="sk-line"></div><div class="sk-line short"></div>';
+      grid.appendChild(s);
+    }
+  }
+
+  function render(items) {
+    grid.innerHTML = "";
+    if (!items.length) {
+      grid.innerHTML = '<div class="empty">No ranked games yet. Check back soon.</div>';
+      meta.textContent = "";
+      return;
+    }
+    items.forEach((g, i) => grid.appendChild(rankCard(g, i + 1)));
+    meta.textContent = items.length + " games ranked · updated " +
+      new Date().toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+  }
+
+  (async function () {
+    renderSkeletons();
+    try {
+      const res = await fetch("/api/games", { headers: { accept: "application/json" } });
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      if (!Array.isArray(data)) throw new Error();
+      render(data);
+    } catch (e) {
+      grid.innerHTML = '<div class="empty">Couldn\'t load the rankings right now. This page goes live once deployed to Cloudflare.</div>';
+      meta.textContent = "";
+    }
+  })();
+</script>
 </body>
 </html>
