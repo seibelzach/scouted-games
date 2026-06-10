@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Game Rankings — Scouted</title>
-<meta name="description" content="Scouted's own scored, sorted ranking of game releases, with filters for platform type, early access, and release window." />
+<meta name="description" content="Scouted's own scored, sorted ranking of game releases, with filters for platform type, early access, count, and release window." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
@@ -28,6 +28,7 @@
   .f-label { font-family:"JetBrains Mono",monospace; font-size:.62rem; letter-spacing:.18em; text-transform:uppercase; color:var(--signal-dim); margin-bottom:10px; display:block; }
   .f-row { margin-bottom:13px; }
   .f-row:last-child { margin-bottom:0; }
+  .f-row.dim { opacity:.4; pointer-events:none; }
   .f-name { font-size:.82rem; color:var(--muted); margin-bottom:7px; }
 
   .seg { display:flex; border:1px solid var(--line); border-radius:9px; overflow:hidden; }
@@ -92,7 +93,7 @@
     <section class="intro">
       <div class="eyebrow">Scouting report</div>
       <h2>The slate, <em>scored</em> and sorted.</h2>
-      <p>Every scorable release, ranked high to low by Scouted's own score. Titles still awaiting a critic score are marked <strong>TBD</strong> and listed after the ranked games. Filter by type or release window on the left.</p>
+      <p>Every scorable release, ranked high to low by Scouted's own score. Titles still awaiting a critic score are marked <strong>TBD</strong> and appear when you view the full list. Filter by type, count, or release window on the left.</p>
     </section>
 
     <div class="layout">
@@ -123,12 +124,30 @@
         </div>
 
         <div class="f-sec">
+          <span class="f-label">Show</span>
+          <div class="f-row">
+            <div class="seg" data-filter="count">
+              <button type="button" data-val="10">10</button>
+              <button type="button" data-val="25" class="active">25</button>
+              <button type="button" data-val="50">50</button>
+              <button type="button" data-val="all">All</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="f-sec">
           <span class="f-label">Release window</span>
           <div class="f-row">
+            <div class="seg" data-filter="last4">
+              <button type="button" data-val="off" class="active">All time</button>
+              <button type="button" data-val="on">Last 4 weeks</button>
+            </div>
+          </div>
+          <div class="f-row" id="row-year">
             <div class="f-name">Year</div>
             <select class="fsel" id="selYear"></select>
           </div>
-          <div class="f-row">
+          <div class="f-row" id="row-month">
             <div class="f-name">Month</div>
             <select class="fsel" id="selMonth">
               <option value="all">All months</option>
@@ -168,16 +187,28 @@
   const meta = document.getElementById("rank-meta");
   const selYear = document.getElementById("selYear");
   const selMonth = document.getElementById("selMonth");
+  const rowYear = document.getElementById("row-year");
+  const rowMonth = document.getElementById("row-month");
 
   let ALL = [];
-  // Ports/remasters and Early Access hidden by default.
-  const DEFAULTS = { port: "hide", ea: "hide", year: "all", month: "all" };
+  const CURRENT_YEAR = new Date().getFullYear();
+  // Defaults: hide ports & EA, top 25, current year, all months, all-time window.
+  const DEFAULTS = { port: "hide", ea: "hide", count: "25", year: "all", month: "all", last4: "off" };
   const state = Object.assign({}, DEFAULTS);
 
   const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));
   const tierClass = s => s >= 90 ? "diamond" : s >= 80 ? "blue" : s >= 70 ? "yellow" : s >= 60 ? "orange" : "red";
   const splitPlatforms = p => String(p || "").split(/[,|]/).map(x => x.trim()).filter(Boolean);
   const isFree = p => !p || /^free$/i.test(p.trim());
+
+  // ---- rolling 4-week window ----------------------------------------
+  function inLast4Weeks(g) {
+    if (!g.month || !g.day) return false;
+    const d = new Date(g.year, g.month - 1, g.day);
+    const now = new Date();
+    const cutoff = new Date(now.getTime() - 28 * 86400000);
+    return d >= cutoff && d <= now;
+  }
 
   // ---- cover image with fallback chain ------------------------------
   function coverCandidates(g) {
@@ -195,11 +226,11 @@
     const img = el.querySelector("img.cover");
     const fb = el.querySelector(".thumb-fallback");
     const showFallback = () => { if (fb) fb.style.display = "flex"; };
-    if (!img) { showFallback(); return; }              // no image candidates at all
+    if (!img) { showFallback(); return; }
     const alts = coverCandidates(g).slice(1);
     img.addEventListener("error", function onErr() {
-      if (alts.length) { img.src = alts.shift(); }      // try next source
-      else { img.style.display = "none"; showFallback(); img.removeEventListener("error", onErr); } // reveal placeholder
+      if (alts.length) { img.src = alts.shift(); }
+      else { img.style.display = "none"; showFallback(); img.removeEventListener("error", onErr); }
     });
   }
 
@@ -231,7 +262,6 @@
            '<div class="platforms">' + platHTML(g) + '</div>' +
            '<div class="price-row">' + priceHTML(g) + '</div></div>';
   }
-
   function scoredCard(g, rank, delay) {
     const el = baseCard(g);
     el.style.animationDelay = delay + "ms";
@@ -272,8 +302,12 @@
     if (state.port === "hide" && g.port) return false;
     if (state.ea === "only" && !g.ea) return false;
     if (state.ea === "hide" && g.ea) return false;
-    if (state.year !== "all" && g.year !== Number(state.year)) return false;
-    if (state.month !== "all" && g.month !== Number(state.month)) return false;
+    if (state.last4 === "on") {
+      if (!inLast4Weeks(g)) return false;
+    } else {
+      if (state.year !== "all" && g.year !== Number(state.year)) return false;
+      if (state.month !== "all" && g.month !== Number(state.month)) return false;
+    }
     return true;
   }
 
@@ -281,6 +315,10 @@
     const items = ALL.filter(passes);
     const scored = items.filter(g => g.official).sort((a, b) => b.score - a.score);
     const tbd    = items.filter(g => !g.official).sort((a, b) => b.score - a.score);
+
+    const showAll = state.count === "all";
+    const limit = showAll ? scored.length : Number(state.count);
+    const shown = scored.slice(0, limit);
 
     grid.innerHTML = "";
     if (!items.length) {
@@ -290,17 +328,21 @@
     }
 
     let i = 0;
-    scored.forEach((g, idx) => grid.appendChild(scoredCard(g, idx + 1, Math.min(i++, 24) * 28)));
-    if (tbd.length) {
+    shown.forEach((g, idx) => grid.appendChild(scoredCard(g, idx + 1, Math.min(i++, 24) * 28)));
+    if (showAll && tbd.length) {
       grid.appendChild(divider("Awaiting scores"));
       tbd.forEach(g => grid.appendChild(tbdCard(g, Math.min(i++, 24) * 28)));
     }
 
-    const parts = [];
-    if (scored.length) parts.push(scored.length + " ranked");
-    if (tbd.length) parts.push(tbd.length + " TBD");
-    meta.textContent = parts.join(" · ") + " · updated " +
-      new Date().toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+    const stamp = " · updated " + new Date().toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+    if (showAll) {
+      const parts = [];
+      if (scored.length) parts.push(scored.length + " ranked");
+      if (tbd.length) parts.push(tbd.length + " TBD");
+      meta.textContent = parts.join(" · ") + stamp;
+    } else {
+      meta.textContent = "Top " + shown.length + " of " + scored.length + " ranked" + stamp;
+    }
   }
 
   // ---- year dropdown (auto-enable years that have data) --------------
@@ -312,6 +354,12 @@
       html += '<option value="' + y + '"' + (has ? "" : " disabled") + '>' + y + (has ? "" : " (soon)") + '</option>';
     }
     selYear.innerHTML = html;
+    // Default to the current year if we have data for it, else the latest year present.
+    const years = [...present];
+    DEFAULTS.year = present.has(CURRENT_YEAR) ? String(CURRENT_YEAR)
+                  : years.length ? String(Math.max(...years)) : "all";
+    state.year = DEFAULTS.year;
+    selYear.value = state.year;
   }
 
   // ---- controls ------------------------------------------------------
@@ -319,12 +367,18 @@
     document.querySelectorAll(".seg").forEach(seg =>
       seg.querySelectorAll("button").forEach(b => b.classList.toggle("active", b.dataset.val === state[seg.dataset.filter])));
   }
+  function syncWindow() {
+    const rolling = state.last4 === "on";
+    rowYear.classList.toggle("dim", rolling);
+    rowMonth.classList.toggle("dim", rolling);
+  }
   document.querySelectorAll(".seg").forEach(seg => {
     seg.addEventListener("click", e => {
       const btn = e.target.closest("button");
       if (!btn) return;
       state[seg.dataset.filter] = btn.dataset.val;
       seg.querySelectorAll("button").forEach(b => b.classList.toggle("active", b === btn));
+      if (seg.dataset.filter === "last4") syncWindow();
       render();
     });
   });
@@ -333,8 +387,8 @@
 
   document.getElementById("reset").addEventListener("click", () => {
     Object.assign(state, DEFAULTS);
-    syncSegs();
-    selYear.value = "all"; selMonth.value = "all";
+    syncSegs(); syncWindow();
+    selYear.value = state.year; selMonth.value = "all";
     render();
   });
 
@@ -348,6 +402,7 @@
       if (!Array.isArray(data)) throw new Error();
       ALL = data;
       buildYears();
+      syncWindow();
       render();
     } catch (e) {
       grid.innerHTML = '<div class="empty">Couldn\'t load the rankings right now. This page goes live once deployed to Cloudflare.</div>';

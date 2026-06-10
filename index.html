@@ -69,8 +69,9 @@
     <section class="rail">
       <div class="rail-head">
         <div>
-          <h3>Top of <span id="year-label">2026</span> <span class="rail-tag">Placeholder data</span></h3>
+          <h3>Top of <span id="year-label">2026</span></h3>
           <div class="sub">The highest-rated games of the year so far.</div>
+          <a class="see-all" href="rankings.html" style="display:inline-block; margin-top:9px;">See full rankings →</a>
         </div>
         <div class="rail-ctrls">
           <button class="rail-btn" data-dir="prev" aria-label="Scroll left">‹</button>
@@ -123,23 +124,44 @@
   })();
 
   /* ===== Ranking rails ===== */
-  const tierClass = s => s>=85 ? "high" : s>=70 ? "good" : s>=50 ? "mid" : "low";
+  const esc = s => String(s==null?"":s).replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));
+  const tierClass = s => s>=90 ? "diamond" : s>=80 ? "blue" : s>=70 ? "yellow" : s>=60 ? "orange" : "red";
+  function posterCover(item){
+    const out = [];
+    if (item.steam){
+      const b = "https://cdn.cloudflare.steamstatic.com/steam/apps/" + item.steam + "/";
+      out.push(b+"library_600x900.jpg", b+"header.jpg", b+"capsule_616x353.jpg");
+    } else if (item.cover){ out.push(item.cover); }
+    return out;
+  }
 
   function posterCard(item){
     const a = document.createElement("a");
     a.className = "poster";
     a.href = item.url || "#";
+    if (item.url){ a.target = "_blank"; a.rel = "noopener"; }
     const chip = item.hype
       ? `<span class="hype-chip">Hype</span>`
-      : `<span class="score-chip ${tierClass(item.score)}">${item.score}</span>`;
+      : `<span class="score-chip ${tierClass(item.score)}"><span class="n">${item.score}</span></span>`;
+    const cands = posterCover(item);
+    const img = cands.length ? `<img class="cover" src="${esc(cands[0])}" alt="" loading="lazy">` : ``;
     a.innerHTML = `
       <div class="poster-art">
         <span class="rank-badge">#${item.rank}</span>
         <span class="ghost-rank">${item.rank}</span>
         ${chip}
+        ${img}
       </div>
-      <div class="poster-title">${item.title}</div>
-      <div class="poster-meta">${item.meta || ""}</div>`;
+      <div class="poster-title">${esc(item.title)}</div>
+      <div class="poster-meta">${esc(item.meta || "")}</div>`;
+    const el = a.querySelector("img.cover");
+    if (el){
+      const alts = cands.slice(1);
+      el.addEventListener("error", function h(){
+        if (alts.length) { el.src = alts.shift(); }
+        else { el.style.display = "none"; el.removeEventListener("error", h); }
+      });
+    }
     return a;
   }
   function fillRail(id, items){
@@ -148,7 +170,29 @@
   }
   fillRail("rail-lastmonth", LAST_MONTH);
   fillRail("rail-anticipated", ANTICIPATED);
-  fillRail("rail-ytd", YTD);
+
+  /* ===== Top of year rail = live data (top 10 scored, no ports/EA, current year) ===== */
+  (async function(){
+    const rail = document.getElementById("rail-ytd");
+    try {
+      const res = await fetch("/api/games", { headers: { accept: "application/json" } });
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      if (!Array.isArray(data)) throw new Error();
+      const yr = new Date().getFullYear();
+      const top = data
+        .filter(g => g.official && !g.port && !g.ea && g.year === yr)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 10)
+        .map((g, i) => ({ rank: i+1, title: g.game, score: g.score, meta: String(g.year), url: g.url, steam: g.steam, cover: g.cover }));
+      rail.innerHTML = "";
+      (top.length ? top : YTD).forEach(it => rail.appendChild(posterCard(it)));
+      window.dispatchEvent(new Event("resize"));   // refresh rail arrow state after async fill
+    } catch (e) {
+      fillRail("rail-ytd", YTD);
+      window.dispatchEvent(new Event("resize"));
+    }
+  })();
 
   /* ===== Rail arrow controls ===== */
   document.querySelectorAll(".rail").forEach(rail => {
