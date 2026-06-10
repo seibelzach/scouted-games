@@ -16,6 +16,19 @@ const COL = {
   gameScore: 14, ghostScore: 15, genres: 16, tags: 17, cover: 18
 };
 
+// This feed is the 2026 tab. When more year tabs are wired in, each gets
+// its own fetch + YEAR tag so the site can filter across years.
+const YEAR = 2026;
+
+// Parse the month from the sheet's own Release Date (e.g. "Jan-5" -> 1).
+// We use the date you typed, never RAWG's release date.
+const MONTHS = { jan:1, feb:2, mar:3, apr:4, may:5, jun:6,
+                 jul:7, aug:8, sep:9, oct:10, nov:11, dec:12 };
+function monthOf(dateStr) {
+  const key = String(dateStr || '').trim().slice(0, 3).toLowerCase();
+  return MONTHS[key] || null;
+}
+
 export async function onRequest() {
   try {
     const res = await fetch(CSV_URL, { cf: { cacheTtl: 1800, cacheEverything: true } });
@@ -81,6 +94,8 @@ function shape(rows) {
     out.push({
       game: name,
       releaseDate: (r[COL.date] || '').trim(),
+      month: monthOf(r[COL.date]),
+      year: YEAR,
       platforms: (r[COL.platforms] || '').trim(),
       price: (r[COL.price] || '').trim(),
       score: Math.round(score),
@@ -92,6 +107,9 @@ function shape(rows) {
       url
     });
   }
-  out.sort((a, b) => b.score - a.score);
+  // Official (critic-scored) games first, best to worst; then provisional.
+  out.sort((a, b) =>
+    a.official === b.official ? b.score - a.score : (a.official ? -1 : 1)
+  );
   return out;
 }
