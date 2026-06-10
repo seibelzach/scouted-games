@@ -20,13 +20,17 @@ const COL = {
 // its own fetch + YEAR tag so the site can filter across years.
 const YEAR = 2026;
 
-// Parse the month from the sheet's own Release Date (e.g. "Jan-5" -> 1).
+// Parse month + day from the sheet's own Release Date (e.g. "Jan-5" -> 1, 5).
 // We use the date you typed, never RAWG's release date.
 const MONTHS = { jan:1, feb:2, mar:3, apr:4, may:5, jun:6,
                  jul:7, aug:8, sep:9, oct:10, nov:11, dec:12 };
 function monthOf(dateStr) {
   const key = String(dateStr || '').trim().slice(0, 3).toLowerCase();
   return MONTHS[key] || null;
+}
+function dayOf(dateStr) {
+  const m = String(dateStr || '').trim().match(/-\s*(\d{1,2})\b/);
+  return m ? Number(m[1]) : null;
 }
 
 export async function onRequest() {
@@ -96,6 +100,7 @@ function shape(rows) {
       game: name,
       releaseDate: (r[COL.date] || '').trim(),
       month: monthOf(r[COL.date]),
+      day: dayOf(r[COL.date]),
       year: YEAR,
       platforms: (r[COL.platforms] || '').trim(),
       price: (r[COL.price] || '').trim(),
