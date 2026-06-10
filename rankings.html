@@ -4,20 +4,65 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Game Rankings — Scouted</title>
-<meta name="description" content="Scouted's own scored, sorted ranking of 2026 game releases." />
+<meta name="description" content="Scouted's own scored, sorted ranking of game releases, with filters for platform type, early access, and release window." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="/styles.css" />
 <style>
-  /* page-specific tweaks (everything else comes from styles.css) */
-  .rank-meta { font-family:"JetBrains Mono",monospace; font-size:.7rem; letter-spacing:.1em; color:var(--faint); margin:2px 0 18px; }
+  /* page-specific (everything else comes from styles.css) */
+  .layout { display:grid; grid-template-columns:248px 1fr; gap:28px; align-items:start; padding:6px 0 10px; }
+
+  .filters {
+    position:sticky; top:calc(var(--nav-h) + 16px);
+    background:linear-gradient(180deg,var(--surface),var(--bg-2));
+    border:1px solid var(--line); border-radius:var(--radius); padding:18px 18px 20px;
+  }
+  .filters-head { display:flex; align-items:baseline; justify-content:space-between; margin-bottom:18px; }
+  .filters-head .ttl { font-family:"Chakra Petch",sans-serif; font-weight:700; font-size:.95rem; letter-spacing:.04em; text-transform:uppercase; }
+  .f-reset { background:none; border:none; cursor:pointer; font-family:"JetBrains Mono",monospace; font-size:.6rem; letter-spacing:.1em; text-transform:uppercase; color:var(--faint); padding:2px 0; transition:color .15s; }
+  .f-reset:hover { color:var(--signal); }
+
+  .f-sec { margin-bottom:22px; }
+  .f-sec:last-child { margin-bottom:0; }
+  .f-label { font-family:"JetBrains Mono",monospace; font-size:.62rem; letter-spacing:.18em; text-transform:uppercase; color:var(--signal-dim); margin-bottom:10px; display:block; }
+  .f-row { margin-bottom:13px; }
+  .f-row:last-child { margin-bottom:0; }
+  .f-name { font-size:.82rem; color:var(--muted); margin-bottom:7px; }
+
+  .seg { display:flex; border:1px solid var(--line); border-radius:9px; overflow:hidden; }
+  .seg button { flex:1; background:var(--surface); color:var(--muted); border:none; padding:8px 0; cursor:pointer;
+    font-family:"JetBrains Mono",monospace; font-size:.62rem; letter-spacing:.08em; text-transform:uppercase; transition:background .15s,color .15s; }
+  .seg button + button { border-left:1px solid var(--line); }
+  .seg button:hover:not(.active) { color:var(--text); background:var(--surface-2); }
+  .seg button.active { background:var(--signal); color:#0a0d06; font-weight:700; }
+
+  .fsel { width:100%; background:var(--surface); color:var(--text); border:1px solid var(--line); border-radius:9px;
+    padding:9px 10px; font-family:"Hanken Grotesk",sans-serif; font-size:.85rem; cursor:pointer; appearance:none;
+    background-image:linear-gradient(45deg,transparent 50%,var(--faint) 50%),linear-gradient(135deg,var(--faint) 50%,transparent 50%);
+    background-position:calc(100% - 16px) 18px,calc(100% - 11px) 18px; background-size:5px 5px,5px 5px; background-repeat:no-repeat; }
+  .fsel:focus { outline:none; border-color:var(--signal-dim); }
+  .fsel option { background:var(--bg-2); color:var(--text); }
+  .fsel option:disabled { color:var(--faint); }
+
+  .rank-meta { font-family:"JetBrains Mono",monospace; font-size:.7rem; letter-spacing:.1em; color:var(--faint); margin:0 0 16px; min-height:1em; }
   .price-tag { font-family:"JetBrains Mono",monospace; font-size:.78rem; color:var(--muted); }
   .price-tag.free { color:var(--signal); }
-  .prov { font-family:"JetBrains Mono",monospace; font-size:.56rem; letter-spacing:.1em; text-transform:uppercase;
-          color:var(--faint); border:1px dashed var(--line); border-radius:5px; padding:2px 6px; margin-left:auto; }
-  .score-chip.prov-chip { border-style:dashed; }
   .card .body h4 { color:#fff; }
+
+  /* TBD chip for provisional (ghost-score) entries */
+  .score-chip.tbd { width:auto; min-width:34px; padding:0 9px; border-style:dashed; border-color:var(--line);
+    color:var(--muted); font-family:"JetBrains Mono",monospace; font-size:.6rem; letter-spacing:.12em; }
+
+  /* divider between scored games and the TBD block */
+  .rank-divider { grid-column:1 / -1; display:flex; align-items:center; gap:14px; margin:18px 2px 2px;
+    font-family:"JetBrains Mono",monospace; font-size:.62rem; letter-spacing:.18em; text-transform:uppercase; color:var(--faint); }
+  .rank-divider span.line { flex:1; height:1px; background:var(--line); }
+
+  @media (max-width:900px) {
+    .layout { grid-template-columns:1fr; gap:18px; }
+    .filters { position:static; }
+  }
 </style>
 </head>
 <body>
@@ -41,13 +86,69 @@
   <div class="wrap">
     <section class="intro">
       <div class="eyebrow">Scouting report</div>
-      <h2>The <em>2026</em> slate, scored and sorted.</h2>
-      <p>Every scorable 2026 release, ranked high to low by Scouted's own score. A dashed chip means the score is provisional — a Ghost Score standing in until an official critic score lands.</p>
+      <h2>The slate, <em>scored</em> and sorted.</h2>
+      <p>Every scorable release, ranked high to low by Scouted's own score. Titles still awaiting a critic score are marked <strong>TBD</strong> and listed after the ranked games. Filter by type or release window on the left.</p>
     </section>
 
-    <div class="rank-meta" id="rank-meta">Loading rankings…</div>
+    <div class="layout">
+      <aside class="filters">
+        <div class="filters-head">
+          <span class="ttl">Filters</span>
+          <button class="f-reset" id="reset" type="button">Reset</button>
+        </div>
 
-    <main class="grid" id="grid" aria-live="polite"></main>
+        <div class="f-sec">
+          <span class="f-label">Type</span>
+          <div class="f-row">
+            <div class="f-name">Ports &amp; Remasters</div>
+            <div class="seg" data-filter="port">
+              <button type="button" data-val="all" class="active">All</button>
+              <button type="button" data-val="only">Only</button>
+              <button type="button" data-val="hide">Hide</button>
+            </div>
+          </div>
+          <div class="f-row">
+            <div class="f-name">Early Access</div>
+            <div class="seg" data-filter="ea">
+              <button type="button" data-val="all" class="active">All</button>
+              <button type="button" data-val="only">Only</button>
+              <button type="button" data-val="hide">Hide</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="f-sec">
+          <span class="f-label">Release window</span>
+          <div class="f-row">
+            <div class="f-name">Year</div>
+            <select class="fsel" id="selYear"></select>
+          </div>
+          <div class="f-row">
+            <div class="f-name">Month</div>
+            <select class="fsel" id="selMonth">
+              <option value="all">All months</option>
+              <option value="1">January</option>
+              <option value="2">February</option>
+              <option value="3">March</option>
+              <option value="4">April</option>
+              <option value="5">May</option>
+              <option value="6">June</option>
+              <option value="7">July</option>
+              <option value="8">August</option>
+              <option value="9">September</option>
+              <option value="10">October</option>
+              <option value="11">November</option>
+              <option value="12">December</option>
+            </select>
+          </div>
+        </div>
+      </aside>
+
+      <section class="results">
+        <div class="rank-meta" id="rank-meta">Loading rankings…</div>
+        <main class="grid" id="grid" aria-live="polite"></main>
+      </section>
+    </div>
 
     <footer>
       <div class="mono">SCOUTED // rankings</div>
@@ -60,41 +161,76 @@
 <script>
   const grid = document.getElementById("grid");
   const meta = document.getElementById("rank-meta");
+  const selYear = document.getElementById("selYear");
+  const selMonth = document.getElementById("selMonth");
+
+  let ALL = [];
+  const state = { port: "all", ea: "all", year: "all", month: "all" };
 
   const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));
   const tierClass = s => s >= 85 ? "high" : s >= 70 ? "good" : s >= 50 ? "mid" : "low";
   const splitPlatforms = p => String(p || "").split(/[,|]/).map(x => x.trim()).filter(Boolean);
   const isFree = p => !p || /^free$/i.test(p.trim());
 
-  function rankCard(g, rank) {
+  // ---- card builders -------------------------------------------------
+  function baseCard(g) {
     const el = document.createElement(g.url ? "a" : "div");
     el.className = "card";
     if (g.url) { el.href = g.url; el.target = "_blank"; el.rel = "noopener"; }
-    el.style.animationDelay = (Math.min(rank, 24) * 30) + "ms";
-
+    return el;
+  }
+  function platHTML(g) {
     const plats = splitPlatforms(g.platforms).slice(0, 3).map(p => '<span class="ptag">' + esc(p) + '</span>').join("");
     const flags = (g.ea ? '<span class="ptag">EA</span>' : "") + (g.port ? '<span class="ptag">Port</span>' : "");
-    const chipCls = tierClass(g.score) + (g.official ? "" : " prov-chip");
-    const price = isFree(g.price)
+    return plats + flags;
+  }
+  function priceHTML(g) {
+    return isFree(g.price)
       ? '<span class="price-tag free">Free</span>'
       : '<span class="price-tag">' + esc(g.price) + '</span>';
-    const prov = g.official ? "" : '<span class="prov">provisional</span>';
+  }
+  function coverHTML(g) {
+    return g.cover ? '<img src="' + esc(g.cover) + '" alt="" loading="lazy" onerror="this.style.display=\'none\'">' : "";
+  }
 
-    el.innerHTML = `
-      <div class="thumb">
-        <span class="rank-badge">#${rank}</span>
-        <span class="score-chip ${chipCls}">${g.score}</span>
-        ${g.cover ? `<img src="${esc(g.cover)}" alt="" loading="lazy" onerror="this.style.display='none'">` : ``}
-      </div>
-      <div class="body">
-        <h4>${esc(g.game)}</h4>
-        <div class="platforms">${plats}${flags}</div>
-        <div class="price-row">${price}${prov}</div>
-      </div>`;
+  function scoredCard(g, rank, delay) {
+    const el = baseCard(g);
+    el.style.animationDelay = delay + "ms";
+    el.innerHTML =
+      '<div class="thumb">' +
+        '<span class="rank-badge">#' + rank + '</span>' +
+        '<span class="score-chip ' + tierClass(g.score) + '">' + g.score + '</span>' +
+        coverHTML(g) +
+      '</div>' +
+      '<div class="body"><h4>' + esc(g.game) + '</h4>' +
+        '<div class="platforms">' + platHTML(g) + '</div>' +
+        '<div class="price-row">' + priceHTML(g) + '</div></div>';
     return el;
   }
 
-  function renderSkeletons(n = 8) {
+  function tbdCard(g, delay) {
+    const el = baseCard(g);
+    el.style.animationDelay = delay + "ms";
+    el.innerHTML =
+      '<div class="thumb">' +
+        '<span class="score-chip tbd">TBD</span>' +
+        coverHTML(g) +
+      '</div>' +
+      '<div class="body"><h4>' + esc(g.game) + '</h4>' +
+        '<div class="platforms">' + platHTML(g) + '</div>' +
+        '<div class="price-row">' + priceHTML(g) + '</div></div>';
+    return el;
+  }
+
+  function divider(label) {
+    const d = document.createElement("div");
+    d.className = "rank-divider";
+    d.innerHTML = '<span class="line"></span>' + label + '<span class="line"></span>';
+    return d;
+  }
+
+  // ---- skeletons -----------------------------------------------------
+  function renderSkeletons(n = 9) {
     grid.innerHTML = "";
     for (let i = 0; i < n; i++) {
       const s = document.createElement("div");
@@ -104,18 +240,76 @@
     }
   }
 
-  function render(items) {
+  // ---- filtering + render -------------------------------------------
+  function passes(g) {
+    if (state.port === "only" && !g.port) return false;
+    if (state.port === "hide" && g.port) return false;
+    if (state.ea === "only" && !g.ea) return false;
+    if (state.ea === "hide" && g.ea) return false;
+    if (state.year !== "all" && g.year !== Number(state.year)) return false;
+    if (state.month !== "all" && g.month !== Number(state.month)) return false;
+    return true;
+  }
+
+  function render() {
+    const items = ALL.filter(passes);
+    const scored = items.filter(g => g.official).sort((a, b) => b.score - a.score);
+    const tbd    = items.filter(g => !g.official).sort((a, b) => b.score - a.score);
+
     grid.innerHTML = "";
     if (!items.length) {
-      grid.innerHTML = '<div class="empty">No ranked games yet. Check back soon.</div>';
-      meta.textContent = "";
+      grid.innerHTML = '<div class="empty">No games match these filters.</div>';
+      meta.textContent = "0 games";
       return;
     }
-    items.forEach((g, i) => grid.appendChild(rankCard(g, i + 1)));
-    meta.textContent = items.length + " games ranked · updated " +
+
+    let i = 0;
+    scored.forEach((g, idx) => grid.appendChild(scoredCard(g, idx + 1, Math.min(i++, 24) * 28)));
+    if (tbd.length) {
+      grid.appendChild(divider("Awaiting scores"));
+      tbd.forEach(g => grid.appendChild(tbdCard(g, Math.min(i++, 24) * 28)));
+    }
+
+    const parts = [];
+    if (scored.length) parts.push(scored.length + " ranked");
+    if (tbd.length) parts.push(tbd.length + " TBD");
+    meta.textContent = parts.join(" · ") + " · updated " +
       new Date().toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
   }
 
+  // ---- year dropdown (auto-enable years that have data) --------------
+  function buildYears() {
+    const present = new Set(ALL.map(g => g.year));
+    let html = '<option value="all">All years</option>';
+    for (let y = 2026; y >= 2020; y--) {
+      const has = present.has(y);
+      html += '<option value="' + y + '"' + (has ? "" : " disabled") + '>' + y + (has ? "" : " (soon)") + '</option>';
+    }
+    selYear.innerHTML = html;
+  }
+
+  // ---- controls ------------------------------------------------------
+  document.querySelectorAll(".seg").forEach(seg => {
+    seg.addEventListener("click", e => {
+      const btn = e.target.closest("button");
+      if (!btn) return;
+      state[seg.dataset.filter] = btn.dataset.val;
+      seg.querySelectorAll("button").forEach(b => b.classList.toggle("active", b === btn));
+      render();
+    });
+  });
+  selYear.addEventListener("change", () => { state.year = selYear.value; render(); });
+  selMonth.addEventListener("change", () => { state.month = selMonth.value; render(); });
+
+  document.getElementById("reset").addEventListener("click", () => {
+    state.port = state.ea = "all"; state.year = "all"; state.month = "all";
+    document.querySelectorAll(".seg").forEach(seg =>
+      seg.querySelectorAll("button").forEach(b => b.classList.toggle("active", b.dataset.val === "all")));
+    selYear.value = "all"; selMonth.value = "all";
+    render();
+  });
+
+  // ---- boot ----------------------------------------------------------
   (async function () {
     renderSkeletons();
     try {
@@ -123,7 +317,9 @@
       if (!res.ok) throw new Error();
       const data = await res.json();
       if (!Array.isArray(data)) throw new Error();
-      render(data);
+      ALL = data;
+      buildYears();
+      render();
     } catch (e) {
       grid.innerHTML = '<div class="empty">Couldn\'t load the rankings right now. This page goes live once deployed to Cloudflare.</div>';
       meta.textContent = "";
