@@ -3,24 +3,31 @@
    =========================================================== */
 
 :root {
-  --bg:        #0b0e0c;
-  --bg-2:      #0f1411;
-  --surface:   #141a16;
-  --surface-2: #1a221c;
-  --line:      #2a342c;
-  --line-soft: #1f2821;
-  --text:      #e9efe9;
-  --muted:     #8b978c;
-  --faint:     #5d685f;
-  --signal:    #c7f549;   /* scout signal lime */
-  --signal-dim:#9fc23a;
+  --bg:        #0a0d12;
+  --bg-2:      #0e1219;
+  --surface:   #141a24;
+  --surface-2: #1a2230;
+  --line:      #2a3444;
+  --line-soft: #1f2733;
+  --text:      #e9eef5;
+  --muted:     #8b95a5;
+  --faint:     #5d6675;
+  --signal:    #6ba3d6;   /* scout signal — TF2 steel blue */
+  --signal-dim:#4d7da8;
   --amber:     #ffb454;
 
   /* score tiers */
-  --tier-high: #c7f549;   /* 85+  */
-  --tier-good: #5fd0a0;   /* 70-84 */
-  --tier-mid:  #ffb454;   /* 50-69 */
-  --tier-low:  #ff6b6b;   /* <50  */
+  --tier-red:    #ff6b6b;   /* <= 59 */
+  --tier-orange: #ffb454;   /* 60-69 */
+  --tier-yellow: #ffe25e;   /* 70-79 */
+  --tier-blue:   #6ba3d6;   /* 80-89 */
+  /* 90+ uses the diamond treatment (.score-chip.diamond) */
+
+  /* legacy aliases (placeholder home-page rails) */
+  --tier-high: #6ba3d6;
+  --tier-good: #ffe25e;
+  --tier-mid:  #ffb454;
+  --tier-low:  #ff6b6b;
 
   --radius: 14px;
   --nav-h:  64px;
@@ -43,8 +50,8 @@ body {
 body::before {
   content: ""; position: fixed; inset: 0;
   background-image:
-    linear-gradient(rgba(199,245,73,0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(199,245,73,0.035) 1px, transparent 1px);
+    linear-gradient(rgba(107,163,214,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(107,163,214,0.04) 1px, transparent 1px);
   background-size: 46px 46px;
   -webkit-mask-image: radial-gradient(ellipse 90% 55% at 50% 0%, #000 0%, transparent 75%);
   mask-image: radial-gradient(ellipse 90% 55% at 50% 0%, #000 0%, transparent 75%);
@@ -53,8 +60,8 @@ body::before {
 body::after {
   content: ""; position: fixed; inset: 0;
   background:
-    radial-gradient(circle at 12% -5%, rgba(199,245,73,0.10), transparent 40%),
-    radial-gradient(circle at 92% 6%, rgba(96,160,90,0.07), transparent 38%);
+    radial-gradient(circle at 12% -5%, rgba(107,163,214,0.12), transparent 40%),
+    radial-gradient(circle at 92% 6%, rgba(90,135,190,0.07), transparent 38%);
   z-index: 0; pointer-events: none;
 }
 
@@ -78,7 +85,7 @@ body::after {
   width: 38px; height: 38px; flex: none;
   border: 1.5px solid var(--signal); border-radius: 9px;
   display: grid; place-items: center; position: relative;
-  box-shadow: 0 0 20px rgba(199,245,73,0.18), inset 0 0 14px rgba(199,245,73,0.06);
+  box-shadow: 0 0 20px rgba(107,163,214,0.22), inset 0 0 14px rgba(107,163,214,0.07);
 }
 .mark::before {
   content: ""; position: absolute; inset: 0;
@@ -172,10 +179,37 @@ body::after {
   width: 34px; height: 34px; border-radius: 8px; display: grid; place-items: center;
   background: rgba(10,13,11,0.82); backdrop-filter: blur(4px); border: 1.5px solid var(--tier-good); color: var(--tier-good);
 }
+.score-chip .n { color: inherit; }
+.score-chip.red    { border-color: var(--tier-red);    color: var(--tier-red); }
+.score-chip.orange { border-color: var(--tier-orange); color: var(--tier-orange); }
+.score-chip.yellow { border-color: var(--tier-yellow); color: var(--tier-yellow); }
+.score-chip.blue   { border-color: var(--tier-blue);   color: var(--tier-blue); }
+/* legacy aliases (placeholder home-page rails) */
 .score-chip.high { border-color: var(--tier-high); color: var(--tier-high); }
 .score-chip.good { border-color: var(--tier-good); color: var(--tier-good); }
 .score-chip.mid  { border-color: var(--tier-mid);  color: var(--tier-mid); }
 .score-chip.low  { border-color: var(--tier-low);  color: var(--tier-low); }
+
+/* 90+ : shiny diamond number */
+.score-chip.diamond {
+  border-color: #cdeaff;
+  background: rgba(12,17,24,0.85);
+  box-shadow: 0 0 12px rgba(170,220,255,0.55), inset 0 0 9px rgba(170,220,255,0.22);
+}
+.score-chip.diamond .n {
+  background: linear-gradient(115deg, #ffffff 0%, #bfe9ff 28%, #e6d4ff 50%, #bfe9ff 72%, #ffffff 100%);
+  background-size: 220% 100%;
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; color: transparent;
+  animation: diamondShine 3.2s linear infinite;
+}
+.score-chip.diamond::after {
+  content: "\2726"; position: absolute; top: -5px; right: -5px;
+  font-size: .52rem; color: #e3f3ff; text-shadow: 0 0 6px rgba(180,225,255,0.95);
+  animation: twinkle 2.4s ease-in-out infinite;
+}
+@keyframes diamondShine { to { background-position: -220% 0; } }
+@keyframes twinkle { 0%,100% { opacity: .4; transform: scale(.8); } 50% { opacity: 1; transform: scale(1.15); } }
 .hype-chip {
   position: absolute; bottom: 9px; right: 9px; z-index: 2;
   font-family: "JetBrains Mono", monospace; font-weight: 700; font-size: .58rem; letter-spacing: .1em; text-transform: uppercase;
@@ -205,7 +239,7 @@ body::after {
   opacity: 0; transform: translateY(14px); animation: rise .5s forwards;
 }
 @keyframes rise { to { opacity: 1; transform: none; } }
-.card:hover { transform: translateY(-4px); border-color: var(--signal-dim); box-shadow: 0 14px 38px rgba(0,0,0,.5), 0 0 0 1px rgba(199,245,73,.25); }
+.card:hover { transform: translateY(-4px); border-color: var(--signal-dim); box-shadow: 0 14px 38px rgba(0,0,0,.5), 0 0 0 1px rgba(107,163,214,.3); }
 .thumb { position: relative; aspect-ratio: 16/9; background: #0a0d0b; overflow: hidden; }
 .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .4s ease; }
 .card:hover .thumb img { transform: scale(1.05); }
@@ -213,7 +247,7 @@ body::after {
 .free-badge {
   position: absolute; top: 11px; left: 11px; z-index: 2;
   font-family: "JetBrains Mono", monospace; font-weight: 700; font-size: .66rem; letter-spacing: .14em; text-transform: uppercase;
-  background: var(--signal); color: #0a0d06; padding: 5px 10px; border-radius: 6px; box-shadow: 0 2px 14px rgba(199,245,73,.4);
+  background: var(--signal); color: #08121c; padding: 5px 10px; border-radius: 6px; box-shadow: 0 2px 14px rgba(107,163,214,.45);
 }
 .deadline-tag {
   position: absolute; bottom: 11px; left: 11px; z-index: 2;

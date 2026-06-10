@@ -35,7 +35,7 @@
     font-family:"JetBrains Mono",monospace; font-size:.62rem; letter-spacing:.08em; text-transform:uppercase; transition:background .15s,color .15s; }
   .seg button + button { border-left:1px solid var(--line); }
   .seg button:hover:not(.active) { color:var(--text); background:var(--surface-2); }
-  .seg button.active { background:var(--signal); color:#0a0d06; font-weight:700; }
+  .seg button.active { background:var(--signal); color:#08121c; font-weight:700; }
 
   .fsel { width:100%; background:var(--surface); color:var(--text); border:1px solid var(--line); border-radius:9px;
     padding:9px 10px; font-family:"Hanken Grotesk",sans-serif; font-size:.85rem; cursor:pointer; appearance:none;
@@ -49,6 +49,11 @@
   .price-tag { font-family:"JetBrains Mono",monospace; font-size:.78rem; color:var(--muted); }
   .price-tag.free { color:var(--signal); }
   .card .body h4 { color:#fff; }
+
+  /* titled placeholder shown when no cover image resolves */
+  .thumb-fallback { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; text-align:center;
+    padding:14px; font-family:"Chakra Petch",sans-serif; font-weight:700; font-size:.95rem; line-height:1.25;
+    color:var(--muted); background:linear-gradient(160deg,var(--surface-2),var(--bg-2)); }
 
   /* TBD chip for provisional (ghost-score) entries */
   .score-chip.tbd { width:auto; min-width:34px; padding:0 9px; border-style:dashed; border-color:var(--line);
@@ -102,17 +107,17 @@
           <div class="f-row">
             <div class="f-name">Ports &amp; Remasters</div>
             <div class="seg" data-filter="port">
-              <button type="button" data-val="all" class="active">All</button>
+              <button type="button" data-val="all">All</button>
               <button type="button" data-val="only">Only</button>
-              <button type="button" data-val="hide">Hide</button>
+              <button type="button" data-val="hide" class="active">Hide</button>
             </div>
           </div>
           <div class="f-row">
             <div class="f-name">Early Access</div>
             <div class="seg" data-filter="ea">
-              <button type="button" data-val="all" class="active">All</button>
+              <button type="button" data-val="all">All</button>
               <button type="button" data-val="only">Only</button>
-              <button type="button" data-val="hide">Hide</button>
+              <button type="button" data-val="hide" class="active">Hide</button>
             </div>
           </div>
         </div>
@@ -165,12 +170,36 @@
   const selMonth = document.getElementById("selMonth");
 
   let ALL = [];
-  const state = { port: "all", ea: "all", year: "all", month: "all" };
+  // Ports/remasters and Early Access hidden by default.
+  const DEFAULTS = { port: "hide", ea: "hide", year: "all", month: "all" };
+  const state = Object.assign({}, DEFAULTS);
 
   const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));
-  const tierClass = s => s >= 85 ? "high" : s >= 70 ? "good" : s >= 50 ? "mid" : "low";
+  const tierClass = s => s >= 90 ? "diamond" : s >= 80 ? "blue" : s >= 70 ? "yellow" : s >= 60 ? "orange" : "red";
   const splitPlatforms = p => String(p || "").split(/[,|]/).map(x => x.trim()).filter(Boolean);
   const isFree = p => !p || /^free$/i.test(p.trim());
+
+  // ---- cover image with fallback chain ------------------------------
+  function coverCandidates(g) {
+    const out = [];
+    if (g.cover) out.push(g.cover);
+    if (g.steam) {
+      const b = "https://cdn.cloudflare.steamstatic.com/steam/apps/" + g.steam + "/";
+      ["header.jpg", "capsule_616x353.jpg", "library_600x900.jpg"].forEach(n => {
+        const u = b + n; if (!out.includes(u)) out.push(u);
+      });
+    }
+    return out;
+  }
+  function wireCover(el, g) {
+    const img = el.querySelector("img.cover");
+    if (!img) return;
+    const alts = coverCandidates(g).slice(1);
+    img.addEventListener("error", function onErr() {
+      if (alts.length) { img.src = alts.shift(); }      // try next source
+      else { img.style.display = "none"; img.removeEventListener("error", onErr); } // reveal titled placeholder
+    });
+  }
 
   // ---- card builders -------------------------------------------------
   function baseCard(g) {
@@ -189,39 +218,34 @@
       ? '<span class="price-tag free">Free</span>'
       : '<span class="price-tag">' + esc(g.price) + '</span>';
   }
-  function coverHTML(g) {
-    return g.cover ? '<img src="' + esc(g.cover) + '" alt="" loading="lazy" onerror="this.style.display=\'none\'">' : "";
+  function thumbHTML(g, badges) {
+    const cands = coverCandidates(g);
+    const img = cands.length ? '<img class="cover" src="' + esc(cands[0]) + '" alt="" loading="lazy">' : "";
+    return '<div class="thumb">' + badges +
+           '<span class="thumb-fallback">' + esc(g.game) + '</span>' + img + '</div>';
+  }
+  function bodyHTML(g) {
+    return '<div class="body"><h4>' + esc(g.game) + '</h4>' +
+           '<div class="platforms">' + platHTML(g) + '</div>' +
+           '<div class="price-row">' + priceHTML(g) + '</div></div>';
   }
 
   function scoredCard(g, rank, delay) {
     const el = baseCard(g);
     el.style.animationDelay = delay + "ms";
-    el.innerHTML =
-      '<div class="thumb">' +
-        '<span class="rank-badge">#' + rank + '</span>' +
-        '<span class="score-chip ' + tierClass(g.score) + '">' + g.score + '</span>' +
-        coverHTML(g) +
-      '</div>' +
-      '<div class="body"><h4>' + esc(g.game) + '</h4>' +
-        '<div class="platforms">' + platHTML(g) + '</div>' +
-        '<div class="price-row">' + priceHTML(g) + '</div></div>';
+    const badges = '<span class="rank-badge">#' + rank + '</span>' +
+                   '<span class="score-chip ' + tierClass(g.score) + '"><span class="n">' + g.score + '</span></span>';
+    el.innerHTML = thumbHTML(g, badges) + bodyHTML(g);
+    wireCover(el, g);
     return el;
   }
-
   function tbdCard(g, delay) {
     const el = baseCard(g);
     el.style.animationDelay = delay + "ms";
-    el.innerHTML =
-      '<div class="thumb">' +
-        '<span class="score-chip tbd">TBD</span>' +
-        coverHTML(g) +
-      '</div>' +
-      '<div class="body"><h4>' + esc(g.game) + '</h4>' +
-        '<div class="platforms">' + platHTML(g) + '</div>' +
-        '<div class="price-row">' + priceHTML(g) + '</div></div>';
+    el.innerHTML = thumbHTML(g, '<span class="score-chip tbd">TBD</span>') + bodyHTML(g);
+    wireCover(el, g);
     return el;
   }
-
   function divider(label) {
     const d = document.createElement("div");
     d.className = "rank-divider";
@@ -289,6 +313,10 @@
   }
 
   // ---- controls ------------------------------------------------------
+  function syncSegs() {
+    document.querySelectorAll(".seg").forEach(seg =>
+      seg.querySelectorAll("button").forEach(b => b.classList.toggle("active", b.dataset.val === state[seg.dataset.filter])));
+  }
   document.querySelectorAll(".seg").forEach(seg => {
     seg.addEventListener("click", e => {
       const btn = e.target.closest("button");
@@ -302,9 +330,8 @@
   selMonth.addEventListener("change", () => { state.month = selMonth.value; render(); });
 
   document.getElementById("reset").addEventListener("click", () => {
-    state.port = state.ea = "all"; state.year = "all"; state.month = "all";
-    document.querySelectorAll(".seg").forEach(seg =>
-      seg.querySelectorAll("button").forEach(b => b.classList.toggle("active", b.dataset.val === "all")));
+    Object.assign(state, DEFAULTS);
+    syncSegs();
     selYear.value = "all"; selMonth.value = "all";
     render();
   });
