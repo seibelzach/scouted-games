@@ -50,8 +50,8 @@
   .price-tag.free { color:var(--signal); }
   .card .body h4 { color:#fff; }
 
-  /* titled placeholder shown when no cover image resolves */
-  .thumb-fallback { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; text-align:center;
+  /* titled placeholder shown only when no cover image resolves */
+  .thumb-fallback { position:absolute; inset:0; display:none; align-items:center; justify-content:center; text-align:center;
     padding:14px; font-family:"Chakra Petch",sans-serif; font-weight:700; font-size:.95rem; line-height:1.25;
     color:var(--muted); background:linear-gradient(160deg,var(--surface-2),var(--bg-2)); }
 
@@ -193,11 +193,13 @@
   }
   function wireCover(el, g) {
     const img = el.querySelector("img.cover");
-    if (!img) return;
+    const fb = el.querySelector(".thumb-fallback");
+    const showFallback = () => { if (fb) fb.style.display = "flex"; };
+    if (!img) { showFallback(); return; }              // no image candidates at all
     const alts = coverCandidates(g).slice(1);
     img.addEventListener("error", function onErr() {
       if (alts.length) { img.src = alts.shift(); }      // try next source
-      else { img.style.display = "none"; img.removeEventListener("error", onErr); } // reveal titled placeholder
+      else { img.style.display = "none"; showFallback(); img.removeEventListener("error", onErr); } // reveal placeholder
     });
   }
 
