@@ -89,7 +89,8 @@ function shape(rows) {
     if (score == null) continue;             // nothing scorable yet -> skip
 
     const steam = (r[COL.steam] || '').trim();
-    const url = /^\d+$/.test(steam) ? 'https://store.steampowered.com/app/' + steam + '/' : '';
+    const hasSteam = /^\d+$/.test(steam);
+    const url = hasSteam ? 'https://store.steampowered.com/app/' + steam + '/' : '';
 
     out.push({
       game: name,
@@ -104,6 +105,7 @@ function shape(rows) {
       port: /^yes$/i.test((r[COL.port] || '').trim()),
       genres: (r[COL.genres] || '').trim(),
       cover: (r[COL.cover] || '').trim(),
+      steam: hasSteam ? steam : '',
       url
     });
   }
