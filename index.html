@@ -39,8 +39,8 @@
     <section class="rail">
       <div class="rail-head">
         <div>
-          <h3>Top Releases <span class="rail-tag">Placeholder data</span></h3>
-          <div class="sub" id="sub-lastmonth">The 10 best-reviewed games from last month, best to worst.</div>
+          <h3>Top Recent Releases</h3>
+          <div class="sub">The best-scored games released in the last 30 days.</div>
         </div>
         <div class="rail-ctrls">
           <button class="rail-btn" data-dir="prev" aria-label="Scroll left">‹</button>
@@ -114,10 +114,7 @@
   /* ===== Month/year labels ===== */
   (function(){
     const now = new Date();
-    const prev = new Date(now.getFullYear(), now.getMonth()-1, 1);
     const monthName = d => d.toLocaleString([], {month:"long"});
-    document.getElementById("sub-lastmonth").textContent =
-      `The 10 best-reviewed games from ${monthName(prev)} ${prev.getFullYear()}, best to worst.`;
     document.getElementById("sub-anticipated").textContent =
       `What players are hyped for in ${monthName(now)}.`;
     document.getElementById("year-label").textContent = now.getFullYear();
@@ -168,30 +165,47 @@
     const t = document.getElementById(id);
     items.forEach(it => t.appendChild(posterCard(it)));
   }
-  fillRail("rail-lastmonth", LAST_MONTH);
+  const MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const dateLabel = g => ((g.month ? MON[g.month-1] : "") + (g.day ? " " + g.day : "")).trim();
+
   fillRail("rail-anticipated", ANTICIPATED);
 
-  /* ===== Top of year rail = live data (top 10 scored, no ports/EA, current year) ===== */
+  /* ===== Live rails from /api/games (fetched once) ===== */
   (async function(){
-    const rail = document.getElementById("rail-ytd");
+    const railRecent = document.getElementById("rail-lastmonth");
+    const railYtd = document.getElementById("rail-ytd");
+    let data = null;
     try {
       const res = await fetch("/api/games", { headers: { accept: "application/json" } });
-      if (!res.ok) throw new Error();
-      const data = await res.json();
-      if (!Array.isArray(data)) throw new Error();
-      const yr = new Date().getFullYear();
+      if (res.ok) { const j = await res.json(); if (Array.isArray(j)) data = j; }
+    } catch (e) {}
+
+    if (data) {
+      const now = new Date();
+      const cutoff = new Date(now.getTime() - 30 * 86400000);
+      const recent = data
+        .filter(g => g.official && !g.port && !g.ea && g.month && g.day)
+        .filter(g => { const d = new Date(g.year, g.month - 1, g.day); return d >= cutoff && d <= now; })
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 10)
+        .map((g, i) => ({ rank:i+1, title:g.game, score:g.score, meta:dateLabel(g), url:g.url, steam:g.steam, cover:g.cover }));
+      railRecent.innerHTML = "";
+      if (recent.length) recent.forEach(it => railRecent.appendChild(posterCard(it)));
+      else railRecent.innerHTML = '<div style="padding:28px 4px; color:var(--muted); font-family:\'JetBrains Mono\',monospace; font-size:.78rem; letter-spacing:.06em;">No scored releases in the last 30 days yet — check back soon.</div>';
+
+      const yr = now.getFullYear();
       const top = data
         .filter(g => g.official && !g.port && !g.ea && g.year === yr)
         .sort((a, b) => b.score - a.score)
         .slice(0, 10)
-        .map((g, i) => ({ rank: i+1, title: g.game, score: g.score, meta: String(g.year), url: g.url, steam: g.steam, cover: g.cover }));
-      rail.innerHTML = "";
-      (top.length ? top : YTD).forEach(it => rail.appendChild(posterCard(it)));
-      window.dispatchEvent(new Event("resize"));   // refresh rail arrow state after async fill
-    } catch (e) {
+        .map((g, i) => ({ rank:i+1, title:g.game, score:g.score, meta:String(g.year), url:g.url, steam:g.steam, cover:g.cover }));
+      railYtd.innerHTML = "";
+      (top.length ? top : YTD).forEach(it => railYtd.appendChild(posterCard(it)));
+    } else {
+      fillRail("rail-lastmonth", LAST_MONTH);
       fillRail("rail-ytd", YTD);
-      window.dispatchEvent(new Event("resize"));
     }
+    window.dispatchEvent(new Event("resize"));   // refresh rail arrow state after async fill
   })();
 
   /* ===== Rail arrow controls ===== */

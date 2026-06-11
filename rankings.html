@@ -38,6 +38,12 @@
   .seg button:hover:not(.active) { color:var(--text); background:var(--surface-2); }
   .seg button.active { background:var(--signal); color:#08121c; font-weight:700; }
 
+  .seg2 { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+  .seg2 button { background:var(--surface); color:var(--muted); border:1px solid var(--line); border-radius:8px; padding:8px 0; cursor:pointer;
+    font-family:"JetBrains Mono",monospace; font-size:.62rem; letter-spacing:.06em; text-transform:uppercase; transition:background .15s,color .15s,border-color .15s; }
+  .seg2 button:hover:not(.active) { color:var(--text); background:var(--surface-2); }
+  .seg2 button.active { background:var(--signal); color:#08121c; font-weight:700; border-color:var(--signal); }
+
   .fsel { width:100%; background:var(--surface); color:var(--text); border:1px solid var(--line); border-radius:9px;
     padding:9px 10px; font-family:"Hanken Grotesk",sans-serif; font-size:.85rem; cursor:pointer; appearance:none;
     background-image:linear-gradient(45deg,transparent 50%,var(--faint) 50%),linear-gradient(135deg,var(--faint) 50%,transparent 50%);
@@ -138,9 +144,11 @@
         <div class="f-sec">
           <span class="f-label">Release window</span>
           <div class="f-row">
-            <div class="seg" data-filter="last4">
-              <button type="button" data-val="off" class="active">All time</button>
-              <button type="button" data-val="on">Last 4 weeks</button>
+            <div class="seg2" data-filter="window">
+              <button type="button" data-val="all" class="active">All time</button>
+              <button type="button" data-val="6mo">6 months</button>
+              <button type="button" data-val="90d">90 days</button>
+              <button type="button" data-val="30d">30 days</button>
             </div>
           </div>
           <div class="f-row" id="row-year">
@@ -193,7 +201,7 @@
   let ALL = [];
   const CURRENT_YEAR = new Date().getFullYear();
   // Defaults: hide ports & EA, top 25, current year, all months, all-time window.
-  const DEFAULTS = { port: "hide", ea: "hide", count: "25", year: "all", month: "all", last4: "off" };
+  const DEFAULTS = { port: "hide", ea: "hide", count: "25", year: "all", month: "all", window: "all" };
   const state = Object.assign({}, DEFAULTS);
 
   const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));
@@ -201,13 +209,18 @@
   const splitPlatforms = p => String(p || "").split(/[,|]/).map(x => x.trim()).filter(Boolean);
   const isFree = p => !p || /^free$/i.test(p.trim());
 
-  // ---- rolling 4-week window ----------------------------------------
-  function inLast4Weeks(g) {
+  // ---- rolling release window ---------------------------------------
+  function windowCutoff(win) {
+    const c = new Date();
+    if (win === "6mo") c.setMonth(c.getMonth() - 6);
+    else if (win === "90d") c.setDate(c.getDate() - 90);
+    else if (win === "30d") c.setDate(c.getDate() - 30);
+    return c;
+  }
+  function inWindow(g, win) {
     if (!g.month || !g.day) return false;
     const d = new Date(g.year, g.month - 1, g.day);
-    const now = new Date();
-    const cutoff = new Date(now.getTime() - 28 * 86400000);
-    return d >= cutoff && d <= now;
+    return d >= windowCutoff(win) && d <= new Date();
   }
 
   // ---- cover image with fallback chain ------------------------------
@@ -302,8 +315,8 @@
     if (state.port === "hide" && g.port) return false;
     if (state.ea === "only" && !g.ea) return false;
     if (state.ea === "hide" && g.ea) return false;
-    if (state.last4 === "on") {
-      if (!inLast4Weeks(g)) return false;
+    if (state.window !== "all") {
+      if (!inWindow(g, state.window)) return false;
     } else {
       if (state.year !== "all" && g.year !== Number(state.year)) return false;
       if (state.month !== "all" && g.month !== Number(state.month)) return false;
@@ -364,21 +377,21 @@
 
   // ---- controls ------------------------------------------------------
   function syncSegs() {
-    document.querySelectorAll(".seg").forEach(seg =>
+    document.querySelectorAll(".seg, .seg2").forEach(seg =>
       seg.querySelectorAll("button").forEach(b => b.classList.toggle("active", b.dataset.val === state[seg.dataset.filter])));
   }
   function syncWindow() {
-    const rolling = state.last4 === "on";
+    const rolling = state.window !== "all";
     rowYear.classList.toggle("dim", rolling);
     rowMonth.classList.toggle("dim", rolling);
   }
-  document.querySelectorAll(".seg").forEach(seg => {
+  document.querySelectorAll(".seg, .seg2").forEach(seg => {
     seg.addEventListener("click", e => {
       const btn = e.target.closest("button");
       if (!btn) return;
       state[seg.dataset.filter] = btn.dataset.val;
       seg.querySelectorAll("button").forEach(b => b.classList.toggle("active", b === btn));
-      if (seg.dataset.filter === "last4") syncWindow();
+      if (seg.dataset.filter === "window") syncWindow();
       render();
     });
   });
