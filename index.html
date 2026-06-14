@@ -129,7 +129,8 @@
       const cdn    = "https://cdn.cloudflare.steamstatic.com/steam/apps/" + item.steam + "/";
       const shared = "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/" + item.steam + "/";
       out.push(cdn+"library_600x900.jpg", shared+"library_600x900.jpg", cdn+"header.jpg", shared+"header.jpg", cdn+"capsule_616x353.jpg");
-    } else if (item.cover){ out.push(item.cover); }
+    }
+    if (item.cover && !out.includes(item.cover)) out.push(item.cover);  // verified/manual URL fallback
     return out;
   }
 
