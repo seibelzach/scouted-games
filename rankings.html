@@ -228,9 +228,11 @@
     const out = [];
     if (g.cover) out.push(g.cover);
     if (g.steam) {
-      const b = "https://cdn.cloudflare.steamstatic.com/steam/apps/" + g.steam + "/";
-      ["header.jpg", "capsule_616x353.jpg", "library_600x900.jpg"].forEach(n => {
-        const u = b + n; if (!out.includes(u)) out.push(u);
+      const cdn    = "https://cdn.cloudflare.steamstatic.com/steam/apps/" + g.steam + "/";
+      const shared = "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/" + g.steam + "/";
+      [cdn + "header.jpg", shared + "header.jpg", cdn + "capsule_616x353.jpg",
+       shared + "capsule_616x353.jpg", cdn + "library_600x900.jpg"].forEach(u => {
+        if (!out.includes(u)) out.push(u);
       });
     }
     return out;
