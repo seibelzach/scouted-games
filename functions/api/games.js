@@ -33,6 +33,15 @@ function dayOf(dateStr) {
   return m ? Number(m[1]) : null;
 }
 
+// Storefront column ("S or E?"): Steam / Epic / Both / N/A -> a list of names.
+function storesOf(v) {
+  const s = String(v || '').trim().toLowerCase();
+  if (s === 'both') return ['Steam', 'Epic'];
+  if (s === 'steam') return ['Steam'];
+  if (s === 'epic') return ['Epic'];
+  return [];   // N/A, blank, or anything else -> show nothing
+}
+
 export async function onRequest() {
   try {
     const res = await fetch(CSV_URL, { cf: { cacheTtl: 1800, cacheEverything: true } });
@@ -110,6 +119,7 @@ function shape(rows) {
       genres: (r[COL.genres] || '').trim(),
       cover: (r[COL.cover] || '').trim(),
       steam: hasSteam ? steam : '',
+      stores: storesOf(r[COL.store]),
       url
     });
   }
