@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Release Schedule — Scouted</title>
+<meta name="description" content="A month-by-month release calendar of upcoming and recent games on a vertical timeline." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/styles.css" />
+<style>
+  /* filter bar */
+  .cal-controls { display:flex; align-items:flex-end; gap:14px; flex-wrap:wrap; margin:4px 0 22px; }
+  .cal-field { display:flex; flex-direction:column; gap:6px; }
+  .cal-field label { font-family:"JetBrains Mono",monospace; font-size:.6rem; letter-spacing:.16em; text-transform:uppercase; color:var(--signal-dim); }
+  .fsel { background:var(--surface); color:var(--text); border:1px solid var(--line); border-radius:9px; min-width:150px;
+    padding:9px 30px 9px 11px; font-family:"Hanken Grotesk",sans-serif; font-size:.85rem; cursor:pointer; appearance:none;
+    background-image:linear-gradient(45deg,transparent 50%,var(--faint) 50%),linear-gradient(135deg,var(--faint) 50%,transparent 50%);
+    background-position:calc(100% - 16px) 18px,calc(100% - 11px) 18px; background-size:5px 5px,5px 5px; background-repeat:no-repeat; }
+  .fsel:focus { outline:none; border-color:var(--signal-dim); }
+  .fsel option { background:var(--bg-2); color:var(--text); }
+  .fsel option:disabled { color:var(--faint); }
+  .cal-today { background:none; border:1px solid var(--line); color:var(--muted); border-radius:9px; padding:9px 14px; cursor:pointer;
+    font-family:"JetBrains Mono",monospace; font-size:.62rem; letter-spacing:.1em; text-transform:uppercase; transition:color .15s,border-color .15s; }
+  .cal-today:hover { color:var(--signal); border-color:var(--signal-dim); }
+  .cal-meta { font-family:"JetBrains Mono",monospace; font-size:.7rem; letter-spacing:.1em; color:var(--faint); margin-left:auto; align-self:center; }
+
+  /* vertical timeline scroll region */
+  .cal-scroll { position:relative; max-height:72vh; overflow-y:auto; padding:8px 4px 10px; }
+  .cal-track { display:flex; flex-direction:column; }
+
+  .day-group { position:relative; margin-left:6px; padding:0 0 34px 30px; border-left:2px solid var(--line); }
+  .day-group:last-child { padding-bottom:8px; }
+  .day-head { position:relative; margin-bottom:14px; }
+  .day-head::before { content:""; position:absolute; left:-37px; top:2px; width:13px; height:13px; border-radius:50%;
+    background:var(--bg-2); border:2px solid var(--signal-dim); }
+  .day-head .dow { font-family:"JetBrains Mono",monospace; font-size:.6rem; letter-spacing:.18em; text-transform:uppercase; color:var(--faint); }
+  .day-head .dnum { font-family:"Chakra Petch",sans-serif; font-weight:700; font-size:1.15rem; color:var(--text); line-height:1.15; }
+  .day-group.today { border-left-color:var(--signal); }
+  .day-group.today .day-head::before { background:var(--signal); border-color:var(--signal); box-shadow:0 0 10px rgba(107,163,214,.6); }
+  .day-group.today .day-head .dow { color:var(--signal); }
+  .day-group.today .day-head .dnum::after { content:" · TODAY"; font-family:"JetBrains Mono",monospace; font-size:.55rem; letter-spacing:.14em; color:var(--signal); }
+
+  /* a day's games, laid out horizontally (scrolls sideways if the day is busy) */
+  .day-row { display:flex; gap:14px; overflow-x:auto; padding-bottom:6px; }
+  .cal-card { width:210px; flex:0 0 auto; }
+  .cal-card .body h4 { color:#fff; }
+  .price-tag { font-family:"JetBrains Mono",monospace; font-size:.78rem; color:var(--muted); }
+  .price-tag.free { color:var(--signal); }
+
+  .thumb-fallback { position:absolute; inset:0; display:none; align-items:center; justify-content:center; text-align:center;
+    padding:12px; font-family:"Chakra Petch",sans-serif; font-weight:700; font-size:.9rem; line-height:1.25;
+    color:var(--muted); background:linear-gradient(160deg,var(--surface-2),var(--bg-2)); }
+
+  @media (max-width:560px){ .cal-card { width:170px; } }
+</style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="brand" href="/">
+        <span class="mark" aria-hidden="true"></span>
+        <span>
+          <h1>SCOUTED<span class="dot">.</span></h1>
+          <span class="tagline">Know what's worth playing</span>
+        </span>
+      </a>
+      <div class="nav-links">
+        <a class="nav-link" href="/">Home</a>
+        <a class="nav-link" href="/rankings.html">Rankings</a>
+        <a class="nav-link active" href="/schedule.html">Schedule</a>
+        <a class="nav-link" href="/free.html">Free Games</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="wrap">
+    <section class="intro">
+      <div class="eyebrow">Release calendar</div>
+      <h2>What's <em>dropping</em>, and when.</h2>
+      <p>Every release on a vertical timeline, earliest at the top. The current month opens on today's date — scroll up for earlier in the month, down for what's ahead. Days with several launches lay them out side by side.</p>
+    </section>
+
+    <div class="cal-controls">
+      <div class="cal-field">
+        <label for="selYear">Year</label>
+        <select class="fsel" id="selYear"></select>
+      </div>
+      <div class="cal-field">
+        <label for="selMonth">Month</label>
+        <select class="fsel" id="selMonth"></select>
+      </div>
+      <button class="cal-today" id="jumpToday" type="button">This month</button>
+      <span class="cal-meta" id="cal-meta"></span>
+    </div>
+
+    <div class="cal-scroll" id="cal-scroll">
+      <div class="cal-track" id="cal-track" aria-live="polite"></div>
+    </div>
+
+    <footer>
+      <div class="mono">SCOUTED // release schedule</div>
+      <p style="margin-top:8px;">Dates are Scouted's own from the release list. Game data and artwork via
+        <a href="https://rawg.io" target="_blank" rel="noopener">RAWG</a> and
+        <a href="https://store.steampowered.com" target="_blank" rel="noopener">Steam</a>.</p>
+    </footer>
+  </div>
+
+<script>
+  const track   = document.getElementById("cal-track");
+  const scroll  = document.getElementById("cal-scroll");
+  const meta     = document.getElementById("cal-meta");
+  const selYear  = document.getElementById("selYear");
+  const selMonth = document.getElementById("selMonth");
+
+  const MON_FULL = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  const DOW = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+
+  let ALL = [];
+  const NOW = new Date();
+  const CUR_Y = NOW.getFullYear();
+  const CUR_M = NOW.getMonth() + 1;
+  const CUR_D = NOW.getDate();
+  let state = { year: CUR_Y, month: CUR_M };
+
+  const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));
+  const tierClass = s => s >= 90 ? "diamond" : s >= 80 ? "blue" : s >= 70 ? "yellow" : s >= 60 ? "orange" : "red";
+  const splitPlatforms = p => String(p || "").split(/[,|]/).map(x => x.trim()).filter(Boolean);
+  const isFree = p => !p || /^free$/i.test(p.trim());
+
+  function coverCandidates(g) {
+    const out = [];
+    if (g.cover) out.push(g.cover);
+    if (g.steam) {
+      const cdn    = "https://cdn.cloudflare.steamstatic.com/steam/apps/" + g.steam + "/";
+      const shared = "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/" + g.steam + "/";
+      [cdn + "header.jpg", shared + "header.jpg", cdn + "capsule_616x353.jpg",
+       shared + "capsule_616x353.jpg", cdn + "library_600x900.jpg"].forEach(u => {
+        if (!out.includes(u)) out.push(u);
+      });
+    }
+    return out;
+  }
+  function wireCover(el, g) {
+    const img = el.querySelector("img.cover");
+    const fb = el.querySelector(".thumb-fallback");
+    const show = () => { if (fb) fb.style.display = "flex"; };
+    if (!img) { show(); return; }
+    const alts = coverCandidates(g).slice(1);
+    img.addEventListener("error", function h() {
+      if (alts.length) { img.src = alts.shift(); }
+      else { img.style.display = "none"; show(); img.removeEventListener("error", h); }
+    });
+  }
+  function platHTML(g) {
+    const plats = splitPlatforms(g.platforms).slice(0, 2).map(p => '<span class="ptag">' + esc(p) + '</span>').join("");
+    const flags = (g.ea ? '<span class="ptag">EA</span>' : "") + (g.port ? '<span class="ptag">Port</span>' : "");
+    return plats + flags;
+  }
+  function priceHTML(g) {
+    const p = String(g.price || '').trim();
+    if (/^free$/i.test(p)) return '<span class="price-tag free">Free</span>';
+    if (!p || /^tb[da]$/i.test(p)) return '<span class="price-tag">$TBD</span>';
+    return '<span class="price-tag">' + esc(p) + '</span>';
+  }
+  function storesHTML(g) {
+    if (!g.stores || !g.stores.length) return '';
+    return '<div class="store-row">' + g.stores.map(s => '<span class="store-tag">' + esc(s) + '</span>').join('') + '</div>';
+  }
+  function calCard(g) {
+    const el = document.createElement(g.url ? "a" : "div");
+    el.className = "card cal-card";
+    if (g.url) { el.href = g.url; el.target = "_blank"; el.rel = "noopener"; }
+    const chip = g.official ? '<span class="score-chip ' + tierClass(g.score) + '"><span class="n">' + g.score + '</span></span>' : "";
+    const cands = coverCandidates(g);
+    const img = cands.length ? '<img class="cover" src="' + esc(cands[0]) + '" alt="" loading="lazy">' : "";
+    el.innerHTML =
+      '<div class="thumb">' + chip + '<span class="thumb-fallback">' + esc(g.game) + '</span>' + img + '</div>' +
+      '<div class="body"><h4>' + esc(g.game) + '</h4>' +
+        '<div class="platforms">' + platHTML(g) + '</div>' +
+        '<div class="price-row">' + priceHTML(g) + '</div>' +
+        storesHTML(g) + '</div>';
+    wireCover(el, g);
+    return el;
+  }
+
+  function render() {
+    const Y = state.year, M = state.month;
+    const games = ALL.filter(g => g.year === Y && g.month === M && g.day);
+
+    const byDay = new Map();
+    games.forEach(g => { if (!byDay.has(g.day)) byDay.set(g.day, []); byDay.get(g.day).push(g); });
+    const days = [...byDay.keys()].sort((a, b) => a - b);
+
+    track.innerHTML = "";
+    if (!days.length) {
+      track.innerHTML = '<div class="empty">No releases listed for ' + MON_FULL[M-1] + ' ' + Y + '.</div>';
+      meta.textContent = "0 releases";
+      return;
+    }
+
+    let todayGroup = null, firstFutureGroup = null;
+    days.forEach(d => {
+      const list = byDay.get(d).sort((a, b) => {
+        if (a.official !== b.official) return a.official ? -1 : 1;
+        return (b.score == null ? -1 : b.score) - (a.score == null ? -1 : a.score);
+      });
+      const group = document.createElement("div");
+      group.className = "day-group";
+      const isToday = (Y === CUR_Y && M === CUR_M && d === CUR_D);
+      if (isToday) group.classList.add("today");
+      const dow = DOW[new Date(Y, M - 1, d).getDay()];
+      group.innerHTML = '<div class="day-head"><span class="dow">' + dow + '</span><br><span class="dnum">' + MON_FULL[M-1].slice(0,3) + ' ' + d + '</span></div>';
+      const row = document.createElement("div");
+      row.className = "day-row";
+      list.forEach(g => row.appendChild(calCard(g)));
+      group.appendChild(row);
+      track.appendChild(group);
+
+      if (isToday) todayGroup = group;
+      if (!firstFutureGroup && Y === CUR_Y && M === CUR_M && d >= CUR_D) firstFutureGroup = group;
+    });
+
+    const count = games.length;
+    meta.textContent = count + (count === 1 ? " release" : " releases");
+
+    // Current month opens at today (or the next release day); other months start at the top.
+    requestAnimationFrame(() => {
+      const target = todayGroup || ((Y === CUR_Y && M === CUR_M) ? firstFutureGroup : null);
+      scroll.scrollTop = target ? Math.max(0, target.offsetTop - 8) : 0;
+    });
+  }
+
+  function buildControls() {
+    const presentYears = new Set(ALL.map(g => g.year));
+    let yh = "";
+    for (let y = 2026; y >= 2020; y--) {
+      const has = presentYears.has(y);
+      yh += '<option value="' + y + '"' + (has ? "" : " disabled") + (y === state.year ? " selected" : "") + '>' + y + (has ? "" : " (soon)") + '</option>';
+    }
+    selYear.innerHTML = yh;
+    selMonth.innerHTML = MON_FULL.map((name, i) =>
+      '<option value="' + (i+1) + '"' + ((i+1) === state.month ? " selected" : "") + '>' + name + '</option>').join("");
+  }
+
+  selYear.addEventListener("change", () => { state.year = Number(selYear.value); render(); });
+  selMonth.addEventListener("change", () => { state.month = Number(selMonth.value); render(); });
+  document.getElementById("jumpToday").addEventListener("click", () => {
+    state.year = CUR_Y; state.month = CUR_M;
+    selYear.value = String(CUR_Y); selMonth.value = String(CUR_M);
+    render();
+  });
+
+  (async function () {
+    meta.textContent = "Loading…";
+    try {
+      const res = await fetch("/api/games", { headers: { accept: "application/json" } });
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      if (!Array.isArray(data)) throw new Error();
+      ALL = data;
+      buildControls();
+      render();
+    } catch (e) {
+      track.innerHTML = '<div class="empty">Couldn\'t load the schedule right now. This page goes live once deployed to Cloudflare.</div>';
+      meta.textContent = "";
+    }
+  })();
+</script>
+</body>
+</html>
