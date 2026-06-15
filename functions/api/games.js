@@ -89,8 +89,7 @@ function shape(rows) {
 
     const official = num(r[COL.gameScore]);  // Game Score (needs a critic score)
     const ghost = num(r[COL.ghostScore]);    // provisional fallback
-    const score = official != null ? official : ghost;
-    if (score == null) continue;             // nothing scorable yet -> skip
+    const score = official != null ? official : ghost;  // may be null for upcoming titles
 
     const steam = (r[COL.steam] || '').trim();
     const hasSteam = /^\d+$/.test(steam);
@@ -104,7 +103,7 @@ function shape(rows) {
       year: YEAR,
       platforms: (r[COL.platforms] || '').trim(),
       price: (r[COL.price] || '').trim(),
-      score: Math.round(score),
+      score: score == null ? null : Math.round(score),
       official: official != null,
       ea: /^yes$/i.test((r[COL.ea] || '').trim()),
       port: /^yes$/i.test((r[COL.port] || '').trim()),
@@ -114,9 +113,10 @@ function shape(rows) {
       url
     });
   }
-  // Official (critic-scored) games first, best to worst; then provisional.
-  out.sort((a, b) =>
-    a.official === b.official ? b.score - a.score : (a.official ? -1 : 1)
-  );
+  // Scored first (official, then provisional by score), unscored/upcoming last.
+  out.sort((a, b) => {
+    if (a.official !== b.official) return a.official ? -1 : 1;
+    return (b.score == null ? -1 : b.score) - (a.score == null ? -1 : a.score);
+  });
   return out;
 }
