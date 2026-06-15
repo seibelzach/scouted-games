@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Release Schedule — Scouted</title>
-<meta name="description" content="A month-by-month release calendar of upcoming and recent games, laid out on a scrollable timeline." />
+<meta name="description" content="A month-by-month release calendar of upcoming and recent games on a vertical timeline." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
@@ -14,7 +14,7 @@
   .cal-controls { display:flex; align-items:flex-end; gap:14px; flex-wrap:wrap; margin:4px 0 22px; }
   .cal-field { display:flex; flex-direction:column; gap:6px; }
   .cal-field label { font-family:"JetBrains Mono",monospace; font-size:.6rem; letter-spacing:.16em; text-transform:uppercase; color:var(--signal-dim); }
-  .fsel { background:var(--surface); color:var(--text); border:1px solid var(--line); border-radius:9px; min-width:140px;
+  .fsel { background:var(--surface); color:var(--text); border:1px solid var(--line); border-radius:9px; min-width:150px;
     padding:9px 30px 9px 11px; font-family:"Hanken Grotesk",sans-serif; font-size:.85rem; cursor:pointer; appearance:none;
     background-image:linear-gradient(45deg,transparent 50%,var(--faint) 50%),linear-gradient(135deg,var(--faint) 50%,transparent 50%);
     background-position:calc(100% - 16px) 18px,calc(100% - 11px) 18px; background-size:5px 5px,5px 5px; background-repeat:no-repeat; }
@@ -26,26 +26,24 @@
   .cal-today:hover { color:var(--signal); border-color:var(--signal-dim); }
   .cal-meta { font-family:"JetBrains Mono",monospace; font-size:.7rem; letter-spacing:.1em; color:var(--faint); margin-left:auto; align-self:center; }
 
-  .cal-scrollwrap { position:relative; }
-  .cal-arrow { position:absolute; top:50%; transform:translateY(-50%); z-index:5; width:38px; height:38px; border-radius:50%;
-    background:var(--surface); border:1px solid var(--line); color:var(--text); cursor:pointer; font-size:1.1rem; line-height:1;
-    display:flex; align-items:center; justify-content:center; transition:background .15s,border-color .15s; }
-  .cal-arrow:hover { background:var(--surface-2); border-color:var(--signal-dim); }
-  .cal-arrow.prev { left:-6px; } .cal-arrow.next { right:-6px; }
-  .cal-arrow[disabled] { opacity:0; pointer-events:none; }
+  /* vertical timeline scroll region */
+  .cal-scroll { position:relative; max-height:72vh; overflow-y:auto; padding:8px 4px 10px; }
+  .cal-track { display:flex; flex-direction:column; }
 
-  .cal-scroll { overflow-x:auto; padding:4px 2px 22px; scroll-behavior:smooth; }
-  .cal-track { display:flex; gap:30px; align-items:flex-start; min-width:min-content; }
-
-  .day-group { flex:0 0 auto; }
-  .day-head { display:flex; flex-direction:column; gap:1px; padding-left:11px; border-left:2px solid var(--line); margin-bottom:14px; }
-  .day-head .dow { font-family:"JetBrains Mono",monospace; font-size:.58rem; letter-spacing:.18em; text-transform:uppercase; color:var(--faint); }
-  .day-head .dnum { font-family:"Chakra Petch",sans-serif; font-weight:700; font-size:1.05rem; color:var(--text); }
-  .day-group.today .day-head { border-left-color:var(--signal); }
+  .day-group { position:relative; margin-left:6px; padding:0 0 34px 30px; border-left:2px solid var(--line); }
+  .day-group:last-child { padding-bottom:8px; }
+  .day-head { position:relative; margin-bottom:14px; }
+  .day-head::before { content:""; position:absolute; left:-37px; top:2px; width:13px; height:13px; border-radius:50%;
+    background:var(--bg-2); border:2px solid var(--signal-dim); }
+  .day-head .dow { font-family:"JetBrains Mono",monospace; font-size:.6rem; letter-spacing:.18em; text-transform:uppercase; color:var(--faint); }
+  .day-head .dnum { font-family:"Chakra Petch",sans-serif; font-weight:700; font-size:1.15rem; color:var(--text); line-height:1.15; }
+  .day-group.today { border-left-color:var(--signal); }
+  .day-group.today .day-head::before { background:var(--signal); border-color:var(--signal); box-shadow:0 0 10px rgba(107,163,214,.6); }
   .day-group.today .day-head .dow { color:var(--signal); }
-  .day-group.today .day-head .dnum::after { content:" · TODAY"; font-family:"JetBrains Mono",monospace; font-size:.55rem; letter-spacing:.14em; color:var(--signal); vertical-align:middle; }
+  .day-group.today .day-head .dnum::after { content:" · TODAY"; font-family:"JetBrains Mono",monospace; font-size:.55rem; letter-spacing:.14em; color:var(--signal); }
 
-  .day-row { display:flex; gap:14px; }
+  /* a day's games, laid out horizontally (scrolls sideways if the day is busy) */
+  .day-row { display:flex; gap:14px; overflow-x:auto; padding-bottom:6px; }
   .cal-card { width:210px; flex:0 0 auto; }
   .cal-card .body h4 { color:#fff; }
   .price-tag { font-family:"JetBrains Mono",monospace; font-size:.78rem; color:var(--muted); }
@@ -55,7 +53,7 @@
     padding:12px; font-family:"Chakra Petch",sans-serif; font-weight:700; font-size:.9rem; line-height:1.25;
     color:var(--muted); background:linear-gradient(160deg,var(--surface-2),var(--bg-2)); }
 
-  @media (max-width:640px){ .cal-arrow { display:none; } }
+  @media (max-width:560px){ .cal-card { width:170px; } }
 </style>
 </head>
 <body>
@@ -81,7 +79,7 @@
     <section class="intro">
       <div class="eyebrow">Release calendar</div>
       <h2>What's <em>dropping</em>, and when.</h2>
-      <p>Every release on a scrollable month timeline, earliest to latest. The current month opens on today's date; pick any month and year to look ahead or back.</p>
+      <p>Every release on a vertical timeline, earliest at the top. The current month opens on today's date — scroll up for earlier in the month, down for what's ahead. Days with several launches lay them out side by side.</p>
     </section>
 
     <div class="cal-controls">
@@ -97,12 +95,8 @@
       <span class="cal-meta" id="cal-meta"></span>
     </div>
 
-    <div class="cal-scrollwrap">
-      <button class="cal-arrow prev" id="calPrev" aria-label="Scroll left">‹</button>
-      <div class="cal-scroll" id="cal-scroll">
-        <div class="cal-track" id="cal-track" aria-live="polite"></div>
-      </div>
-      <button class="cal-arrow next" id="calNext" aria-label="Scroll right">›</button>
+    <div class="cal-scroll" id="cal-scroll">
+      <div class="cal-track" id="cal-track" aria-live="polite"></div>
     </div>
 
     <footer>
@@ -168,7 +162,6 @@
     return isFree(g.price) ? '<span class="price-tag free">Free</span>'
                            : '<span class="price-tag">' + esc(g.price) + '</span>';
   }
-
   function calCard(g) {
     const el = document.createElement(g.url ? "a" : "div");
     el.className = "card cal-card";
@@ -189,7 +182,6 @@
     const Y = state.year, M = state.month;
     const games = ALL.filter(g => g.year === Y && g.month === M && g.day);
 
-    // group by day
     const byDay = new Map();
     games.forEach(g => { if (!byDay.has(g.day)) byDay.set(g.day, []); byDay.get(g.day).push(g); });
     const days = [...byDay.keys()].sort((a, b) => a - b);
@@ -198,7 +190,6 @@
     if (!days.length) {
       track.innerHTML = '<div class="empty">No releases listed for ' + MON_FULL[M-1] + ' ' + Y + '.</div>';
       meta.textContent = "0 releases";
-      updateArrows();
       return;
     }
 
@@ -213,7 +204,7 @@
       const isToday = (Y === CUR_Y && M === CUR_M && d === CUR_D);
       if (isToday) group.classList.add("today");
       const dow = DOW[new Date(Y, M - 1, d).getDay()];
-      group.innerHTML = '<div class="day-head"><span class="dow">' + dow + '</span><span class="dnum">' + MON_FULL[M-1].slice(0,3) + ' ' + d + '</span></div>';
+      group.innerHTML = '<div class="day-head"><span class="dow">' + dow + '</span><br><span class="dnum">' + MON_FULL[M-1].slice(0,3) + ' ' + d + '</span></div>';
       const row = document.createElement("div");
       row.className = "day-row";
       list.forEach(g => row.appendChild(calCard(g)));
@@ -227,15 +218,13 @@
     const count = games.length;
     meta.textContent = count + (count === 1 ? " release" : " releases");
 
-    // Default the current month to today's position; other months start at the left.
+    // Current month opens at today (or the next release day); other months start at the top.
     requestAnimationFrame(() => {
       const target = todayGroup || ((Y === CUR_Y && M === CUR_M) ? firstFutureGroup : null);
-      scroll.scrollLeft = target ? Math.max(0, target.offsetLeft - 8) : 0;
-      updateArrows();
+      scroll.scrollTop = target ? Math.max(0, target.offsetTop - 8) : 0;
     });
   }
 
-  // ---- dropdowns -----------------------------------------------------
   function buildControls() {
     const presentYears = new Set(ALL.map(g => g.year));
     let yh = "";
@@ -256,20 +245,6 @@
     render();
   });
 
-  // ---- scroll arrows -------------------------------------------------
-  const prevBtn = document.getElementById("calPrev");
-  const nextBtn = document.getElementById("calNext");
-  function step() { return Math.max(scroll.clientWidth * 0.8, 240); }
-  function updateArrows() {
-    prevBtn.disabled = scroll.scrollLeft < 8;
-    nextBtn.disabled = scroll.scrollLeft + scroll.clientWidth >= scroll.scrollWidth - 8;
-  }
-  prevBtn.addEventListener("click", () => scroll.scrollBy({ left: -step(), behavior: "smooth" }));
-  nextBtn.addEventListener("click", () => scroll.scrollBy({ left: step(), behavior: "smooth" }));
-  scroll.addEventListener("scroll", updateArrows);
-  window.addEventListener("resize", updateArrows);
-
-  // ---- boot ----------------------------------------------------------
   (async function () {
     meta.textContent = "Loading…";
     try {
