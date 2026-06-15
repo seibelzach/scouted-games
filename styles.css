@@ -190,26 +190,30 @@ body::after {
 .score-chip.mid  { border-color: var(--tier-mid);  color: var(--tier-mid); }
 .score-chip.low  { border-color: var(--tier-low);  color: var(--tier-low); }
 
-/* 90+ : shiny diamond number */
+/* 90+ : the score sits inside a cut gem (MLB-diamond inspired) */
 .score-chip.diamond {
-  border-color: #cdeaff;
-  background: rgba(12,17,24,0.85);
-  box-shadow: 0 0 12px rgba(170,220,255,0.55), inset 0 0 9px rgba(170,220,255,0.22);
+  width: 44px; height: 48px;
+  border: none; background: none; border-radius: 0; box-shadow: none; backdrop-filter: none;
+  filter: drop-shadow(0 2px 3px rgba(0,0,0,.45)) drop-shadow(0 0 7px rgba(150,210,255,.55));
+}
+.score-chip.diamond::before {           /* gem body */
+  content: ""; position: absolute; inset: 0; z-index: 0;
+  clip-path: polygon(18% 0%, 82% 0%, 100% 42%, 50% 100%, 0% 42%);
+  background: linear-gradient(125deg, #ffffff 0%, #c2ebff 30%, #dcc6ff 55%, #b6e6ff 78%, #ffffff 100%);
+  background-size: 220% 220%;
+  animation: diamondShine 3.4s linear infinite;
+}
+.score-chip.diamond::after {            /* crown facet catching light */
+  content: ""; position: absolute; inset: 0; z-index: 1;
+  clip-path: polygon(18% 0%, 82% 0%, 50% 50%);
+  background: linear-gradient(180deg, rgba(255,255,255,.7), rgba(255,255,255,0));
 }
 .score-chip.diamond .n {
-  background: linear-gradient(115deg, #ffffff 0%, #bfe9ff 28%, #e6d4ff 50%, #bfe9ff 72%, #ffffff 100%);
-  background-size: 220% 100%;
-  -webkit-background-clip: text; background-clip: text;
-  -webkit-text-fill-color: transparent; color: transparent;
-  animation: diamondShine 3.2s linear infinite;
+  position: relative; z-index: 2; margin-top: -4px;
+  color: #0b1b2e; -webkit-text-fill-color: #0b1b2e; background: none;
+  text-shadow: 0 1px 0 rgba(255,255,255,.45);
 }
-.score-chip.diamond::after {
-  content: "\2726"; position: absolute; top: -5px; right: -5px;
-  font-size: .52rem; color: #e3f3ff; text-shadow: 0 0 6px rgba(180,225,255,0.95);
-  animation: twinkle 2.4s ease-in-out infinite;
-}
-@keyframes diamondShine { to { background-position: -220% 0; } }
-@keyframes twinkle { 0%,100% { opacity: .4; transform: scale(.8); } 50% { opacity: 1; transform: scale(1.15); } }
+@keyframes diamondShine { 0% { background-position: 0% 0%; } 100% { background-position: 220% 220%; } }
 .hype-chip {
   position: absolute; bottom: 9px; right: 9px; z-index: 2;
   font-family: "JetBrains Mono", monospace; font-weight: 700; font-size: .58rem; letter-spacing: .1em; text-transform: uppercase;
@@ -260,6 +264,8 @@ body::after {
 .card h4 { font-size: 1.04rem; font-weight: 700; line-height: 1.25; letter-spacing: -.01em; color: #ffffff; }
 .platforms { display: flex; flex-wrap: wrap; gap: 6px; }
 .ptag { font-family: "JetBrains Mono", monospace; font-size: .6rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); border: 1px solid var(--line); border-radius: 5px; padding: 3px 7px; background: var(--surface-2); }
+.store-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 9px; }
+.store-tag { font-family: "JetBrains Mono", monospace; font-size: .58rem; letter-spacing: .08em; text-transform: uppercase; color: var(--text); background: var(--surface-2); border: 1px solid var(--signal-dim); border-radius: 5px; padding: 3px 8px; }
 .price-row { display: flex; align-items: baseline; gap: 10px; margin-top: auto; }
 .was { font-family: "JetBrains Mono", monospace; font-size: .82rem; color: var(--faint); text-decoration: line-through; }
 .now { font-family: "Chakra Petch", sans-serif; font-weight: 700; font-size: .9rem; color: var(--signal); letter-spacing: .06em; }

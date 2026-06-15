@@ -159,8 +159,14 @@
     return plats + flags;
   }
   function priceHTML(g) {
-    return isFree(g.price) ? '<span class="price-tag free">Free</span>'
-                           : '<span class="price-tag">' + esc(g.price) + '</span>';
+    const p = String(g.price || '').trim();
+    if (/^free$/i.test(p)) return '<span class="price-tag free">Free</span>';
+    if (!p || /^tb[da]$/i.test(p)) return '<span class="price-tag">$TBD</span>';
+    return '<span class="price-tag">' + esc(p) + '</span>';
+  }
+  function storesHTML(g) {
+    if (!g.stores || !g.stores.length) return '';
+    return '<div class="store-row">' + g.stores.map(s => '<span class="store-tag">' + esc(s) + '</span>').join('') + '</div>';
   }
   function calCard(g) {
     const el = document.createElement(g.url ? "a" : "div");
@@ -173,7 +179,8 @@
       '<div class="thumb">' + chip + '<span class="thumb-fallback">' + esc(g.game) + '</span>' + img + '</div>' +
       '<div class="body"><h4>' + esc(g.game) + '</h4>' +
         '<div class="platforms">' + platHTML(g) + '</div>' +
-        '<div class="price-row">' + priceHTML(g) + '</div></div>';
+        '<div class="price-row">' + priceHTML(g) + '</div>' +
+        storesHTML(g) + '</div>';
     wireCover(el, g);
     return el;
   }
