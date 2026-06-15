@@ -190,26 +190,26 @@ body::after {
 .score-chip.mid  { border-color: var(--tier-mid);  color: var(--tier-mid); }
 .score-chip.low  { border-color: var(--tier-low);  color: var(--tier-low); }
 
-/* 90+ : the score sits inside a cut gem (MLB-diamond inspired) */
+/* 90+ : the score sits inside a brilliant-cut gem with a sliding iridescent sheen */
 .score-chip.diamond {
-  width: 44px; height: 48px;
+  width: 46px; height: 48px;
   border: none; background: none; border-radius: 0; box-shadow: none; backdrop-filter: none;
   filter: drop-shadow(0 2px 3px rgba(0,0,0,.45)) drop-shadow(0 0 7px rgba(150,210,255,.55));
 }
-.score-chip.diamond::before {           /* gem body */
+.score-chip.diamond::before {           /* gem body (hex cut) */
   content: ""; position: absolute; inset: 0; z-index: 0;
-  clip-path: polygon(18% 0%, 82% 0%, 100% 42%, 50% 100%, 0% 42%);
+  clip-path: polygon(50% 0%, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%);
   background: linear-gradient(125deg, #ffffff 0%, #c2ebff 30%, #dcc6ff 55%, #b6e6ff 78%, #ffffff 100%);
   background-size: 220% 220%;
   animation: diamondShine 3.4s linear infinite;
 }
-.score-chip.diamond::after {            /* crown facet catching light */
+.score-chip.diamond::after {            /* crown facets catching light */
   content: ""; position: absolute; inset: 0; z-index: 1;
-  clip-path: polygon(18% 0%, 82% 0%, 50% 50%);
-  background: linear-gradient(180deg, rgba(255,255,255,.7), rgba(255,255,255,0));
+  clip-path: polygon(50% 0%, 93% 25%, 50% 50%, 7% 25%);
+  background: linear-gradient(180deg, rgba(255,255,255,.6), rgba(255,255,255,0));
 }
 .score-chip.diamond .n {
-  position: relative; z-index: 2; margin-top: -4px;
+  position: relative; z-index: 2;
   color: #0b1b2e; -webkit-text-fill-color: #0b1b2e; background: none;
   text-shadow: 0 1px 0 rgba(255,255,255,.45);
 }

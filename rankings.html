@@ -385,6 +385,18 @@
     selYear.value = state.year;
   }
 
+  // Let inbound links preset filters, e.g. rankings.html?window=30d&count=25
+  function applyUrlParams() {
+    const p = new URLSearchParams(location.search);
+    const seg = (key, allowed) => { const v = p.get(key); if (v && allowed.includes(v)) state[key] = v; };
+    seg("port",   ["all", "only", "hide"]);
+    seg("ea",     ["all", "only", "hide"]);
+    seg("count",  ["10", "25", "50", "all"]);
+    seg("window", ["all", "6mo", "90d", "30d"]);
+    const y = p.get("year");  if (y && (y === "all" || /^20\d\d$/.test(y))) state.year = y;
+    const m = p.get("month"); if (m) state.month = m;
+  }
+
   // ---- controls ------------------------------------------------------
   function syncSegs() {
     document.querySelectorAll(".seg, .seg2").forEach(seg =>
@@ -425,6 +437,10 @@
       if (!Array.isArray(data)) throw new Error();
       ALL = data;
       buildYears();
+      applyUrlParams();
+      syncSegs();
+      selYear.value = state.year;
+      selMonth.value = state.month;
       syncWindow();
       render();
     } catch (e) {
