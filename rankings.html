@@ -90,6 +90,7 @@
       <div class="nav-links">
         <a class="nav-link" href="/">Home</a>
         <a class="nav-link active" href="/rankings.html">Rankings</a>
+        <a class="nav-link" href="/schedule.html">Schedule</a>
         <a class="nav-link" href="/free.html">Free Games</a>
       </div>
     </div>
@@ -329,22 +330,23 @@
   function render() {
     const items = ALL.filter(passes);
     const scored = items.filter(g => g.official).sort((a, b) => b.score - a.score);
-    const tbd    = items.filter(g => !g.official).sort((a, b) => b.score - a.score);
+    const tbd    = items.filter(g => !g.official && g.score != null).sort((a, b) => b.score - a.score);
 
     const showAll = state.count === "all";
     const limit = showAll ? scored.length : Number(state.count);
     const shown = scored.slice(0, limit);
+    const willShowTbd = showAll && tbd.length;
 
     grid.innerHTML = "";
-    if (!items.length) {
-      grid.innerHTML = '<div class="empty">No games match these filters.</div>';
-      meta.textContent = "0 games";
+    if (!shown.length && !willShowTbd) {
+      grid.innerHTML = '<div class="empty">No ranked games match these filters.</div>';
+      meta.textContent = "0 ranked";
       return;
     }
 
     let i = 0;
     shown.forEach((g, idx) => grid.appendChild(scoredCard(g, idx + 1, Math.min(i++, 24) * 28)));
-    if (showAll && tbd.length) {
+    if (willShowTbd) {
       grid.appendChild(divider("Awaiting scores"));
       tbd.forEach(g => grid.appendChild(tbdCard(g, Math.min(i++, 24) * 28)));
     }

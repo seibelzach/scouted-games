@@ -9,6 +9,16 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="styles.css" />
+<style>
+  /* scheduled-release poster bits */
+  .poster-art .date-chip { position:absolute; bottom:10px; right:10px; z-index:2;
+    background:rgba(10,13,18,.82); border:1px solid var(--signal-dim); color:var(--signal);
+    border-radius:7px; padding:3px 9px; font-family:"JetBrains Mono",monospace; font-size:.6rem;
+    letter-spacing:.08em; text-transform:uppercase; }
+  .poster-art .poster-fallback { position:absolute; inset:0; display:none; align-items:center; justify-content:center;
+    text-align:center; padding:12px; font-family:"Chakra Petch",sans-serif; font-weight:700; font-size:.9rem;
+    line-height:1.25; color:var(--muted); background:linear-gradient(160deg,var(--surface-2),var(--bg-2)); }
+</style>
 </head>
 <body>
   <nav class="nav">
@@ -23,6 +33,7 @@
       <div class="nav-links">
         <a class="nav-link active" href="index.html">Home</a>
         <a class="nav-link" href="rankings.html">Rankings</a>
+        <a class="nav-link" href="schedule.html">Schedule</a>
         <a class="nav-link" href="free.html">Free Games</a>
       </div>
     </div>
@@ -50,19 +61,20 @@
       <div class="rail-track" id="rail-lastmonth"></div>
     </section>
 
-    <!-- RAIL 2: Most anticipated this month -->
+    <!-- RAIL 2: Scheduled releases (upcoming) -->
     <section class="rail">
       <div class="rail-head">
         <div>
-          <h3>Most Anticipated <span class="rail-tag">Placeholder data</span></h3>
-          <div class="sub" id="sub-anticipated">What players are hyped for this month.</div>
+          <h3>Scheduled Releases</h3>
+          <div class="sub">Coming up next, soonest first.</div>
+          <a class="see-all" href="schedule.html" style="display:inline-block; margin-top:9px;">See release schedule →</a>
         </div>
         <div class="rail-ctrls">
           <button class="rail-btn" data-dir="prev" aria-label="Scroll left">‹</button>
           <button class="rail-btn" data-dir="next" aria-label="Scroll right">›</button>
         </div>
       </div>
-      <div class="rail-track" id="rail-anticipated"></div>
+      <div class="rail-track" id="rail-schedule"></div>
     </section>
 
     <!-- RAIL 3: Top of the year -->
@@ -107,17 +119,10 @@
   const YTD = Array.from({length:10}, (_,i) => ({
     rank: i+1, title: POOL[(i+5)%POOL.length], score: 96 - i, meta: "2026"
   }));
-  const ANTICIPATED = Array.from({length:10}, (_,i) => ({
-    rank: i+1, title: POOL[(i+9)%POOL.length], hype: true, meta: "TBA"
-  }));
 
-  /* ===== Month/year labels ===== */
+  /* ===== Year label ===== */
   (function(){
-    const now = new Date();
-    const monthName = d => d.toLocaleString([], {month:"long"});
-    document.getElementById("sub-anticipated").textContent =
-      `What players are hyped for in ${monthName(now)}.`;
-    document.getElementById("year-label").textContent = now.getFullYear();
+    document.getElementById("year-label").textContent = new Date().getFullYear();
   })();
 
   /* ===== Ranking rails ===== */
@@ -169,8 +174,36 @@
   }
   const MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   const dateLabel = g => ((g.month ? MON[g.month-1] : "") + (g.day ? " " + g.day : "")).trim();
+  const shortPlat = p => String(p||"").split(/[,|]/).map(x=>x.trim()).filter(Boolean).slice(0,2).join(" · ");
 
-  fillRail("rail-anticipated", ANTICIPATED);
+  // Scheduled-release card: no rank, no score — just art, a date chip, and platforms.
+  function scheduleCard(item){
+    const a = document.createElement("a");
+    a.className = "poster";
+    a.href = item.url || "#";
+    if (item.url){ a.target = "_blank"; a.rel = "noopener"; }
+    const cands = posterCover(item);
+    const img = cands.length ? `<img class="cover" src="${esc(cands[0])}" alt="" loading="lazy">` : ``;
+    a.innerHTML = `
+      <div class="poster-art">
+        <span class="date-chip">${esc(item.dateChip)}</span>
+        <span class="poster-fallback">${esc(item.title)}</span>
+        ${img}
+      </div>
+      <div class="poster-title">${esc(item.title)}</div>
+      <div class="poster-meta">${esc(item.meta || "")}</div>`;
+    const fb = a.querySelector(".poster-fallback");
+    const el = a.querySelector("img.cover");
+    if (!el){ if (fb) fb.style.display = "flex"; }
+    else {
+      const alts = cands.slice(1);
+      el.addEventListener("error", function h(){
+        if (alts.length) { el.src = alts.shift(); }
+        else { el.style.display = "none"; if (fb) fb.style.display = "flex"; el.removeEventListener("error", h); }
+      });
+    }
+    return a;
+  }
 
   /* ===== Live rails from /api/games (fetched once) ===== */
   (async function(){
@@ -203,9 +236,23 @@
         .map((g, i) => ({ rank:i+1, title:g.game, score:g.score, meta:String(g.year), url:g.url, steam:g.steam, cover:g.cover }));
       railYtd.innerHTML = "";
       (top.length ? top : YTD).forEach(it => railYtd.appendChild(posterCard(it)));
+
+      // Scheduled Releases: upcoming titles (today onward), soonest first, 10.
+      const today = new Date(); today.setHours(0,0,0,0);
+      const upcoming = data
+        .filter(g => g.month && g.day)
+        .filter(g => new Date(g.year, g.month - 1, g.day) >= today)
+        .sort((a, b) => new Date(a.year, a.month-1, a.day) - new Date(b.year, b.month-1, b.day))
+        .slice(0, 10)
+        .map(g => ({ title:g.game, dateChip: MON[g.month-1] + " " + g.day, meta: shortPlat(g.platforms), url:g.url, steam:g.steam, cover:g.cover }));
+      const railSchedule = document.getElementById("rail-schedule");
+      railSchedule.innerHTML = "";
+      if (upcoming.length) upcoming.forEach(it => railSchedule.appendChild(scheduleCard(it)));
+      else railSchedule.innerHTML = '<div style="padding:28px 4px; color:var(--muted); font-family:\'JetBrains Mono\',monospace; font-size:.78rem; letter-spacing:.06em;">Nothing scheduled ahead right now.</div>';
     } else {
       fillRail("rail-lastmonth", LAST_MONTH);
       fillRail("rail-ytd", YTD);
+      document.getElementById("rail-schedule").innerHTML = '<div style="padding:28px 4px; color:var(--muted); font-family:\'JetBrains Mono\',monospace; font-size:.78rem;">Schedule unavailable right now.</div>';
     }
     window.dispatchEvent(new Event("resize"));   // refresh rail arrow state after async fill
   })();
