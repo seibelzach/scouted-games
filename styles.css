@@ -266,6 +266,22 @@ body::after {
 .ptag { font-family: "JetBrains Mono", monospace; font-size: .6rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); border: 1px solid var(--line); border-radius: 5px; padding: 3px 7px; background: var(--surface-2); }
 .store-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 9px; }
 .store-tag { font-family: "JetBrains Mono", monospace; font-size: .58rem; letter-spacing: .08em; text-transform: uppercase; color: var(--text); background: var(--surface-2); border: 1px solid var(--signal-dim); border-radius: 5px; padding: 3px 8px; }
+
+/* ---- local wishlist ---- */
+.wish-btn { position: absolute; top: 9px; right: 9px; z-index: 4; width: 28px; height: 28px;
+  display: grid; place-items: center; border-radius: 8px; cursor: pointer;
+  background: rgba(10,13,18,.72); border: 1px solid var(--line); backdrop-filter: blur(4px);
+  transition: border-color .15s, transform .12s, background .15s; }
+.wish-btn svg { fill: none; stroke: var(--muted); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.wish-btn:hover { border-color: var(--signal-dim); transform: scale(1.08); background: rgba(10,13,18,.9); }
+.wish-btn:hover svg { stroke: var(--signal); }
+.wish-btn:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
+.wish-btn.on { border-color: var(--signal-dim); }
+.wish-btn.on svg { fill: var(--signal); stroke: var(--signal); }
+.nav-wish { display: inline-flex; align-items: center; gap: 6px; }
+.nav-wish svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.wish-count { font-family: "JetBrains Mono", monospace; font-size: .62rem; line-height: 1;
+  background: var(--signal); color: #0b1b2e; border-radius: 999px; padding: 3px 6px; font-weight: 700; }
 .price-row { display: flex; align-items: baseline; gap: 10px; margin-top: auto; }
 .hours-tag { display: inline-flex; align-items: center; gap: 4px; font-family: "JetBrains Mono", monospace; font-size: .72rem; color: var(--muted); }
 .hours-tag svg { width: 12px; height: 12px; flex: none; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; align-self: center; }

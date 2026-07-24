@@ -9,6 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="/styles.css" />
+<script src="/wishlist.js"></script>
 <style>
   /* page-specific (everything else comes from styles.css) */
   .layout { display:grid; grid-template-columns:248px 1fr; gap:28px; align-items:start; padding:6px 0 10px; }
@@ -93,6 +94,7 @@
         <a class="nav-link" href="/schedule.html">Schedule</a>
         <a class="nav-link" href="/free.html">Free Games</a>
         <a class="nav-link" href="/methodology.html">How We Score</a>
+<a class="nav-link nav-wish" href="/wishlist.html" title="Wishlist" aria-label="Wishlist"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg><span class="wish-count" data-wish-count style="display:none"></span></a>
       </div>
     </div>
   </nav>
@@ -135,6 +137,33 @@
           <span class="f-label">Platform</span>
           <div class="f-row">
             <select class="fsel" id="selPlatform"></select>
+          </div>
+        </div>
+
+        <div class="f-sec">
+          <span class="f-label">Price</span>
+          <div class="f-row">
+            <select class="fsel" id="selPrice">
+              <option value="all">Any price</option>
+              <option value="free">Free</option>
+              <option value="u10">Under $10</option>
+              <option value="u20">Under $20</option>
+              <option value="u40">Under $40</option>
+              <option value="40up">$40 and up</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="f-sec">
+          <span class="f-label">Length</span>
+          <div class="f-row">
+            <select class="fsel" id="selLength">
+              <option value="all">Any length</option>
+              <option value="u10">Under 10 hours</option>
+              <option value="10to25">10 to 25 hours</option>
+              <option value="25to50">25 to 50 hours</option>
+              <option value="50up">50+ hours</option>
+            </select>
           </div>
         </div>
 
@@ -205,13 +234,15 @@
   const selYear = document.getElementById("selYear");
   const selMonth = document.getElementById("selMonth");
   const selPlatform = document.getElementById("selPlatform");
+  const selPrice = document.getElementById("selPrice");
+  const selLength = document.getElementById("selLength");
   const rowYear = document.getElementById("row-year");
   const rowMonth = document.getElementById("row-month");
 
   let ALL = [];
   const CURRENT_YEAR = new Date().getFullYear();
   // Defaults: hide ports & EA, top 25, current year, all months, all-time window.
-  const DEFAULTS = { port: "hide", ea: "hide", count: "25", year: "all", month: "all", window: "all", platform: "all" };
+  const DEFAULTS = { port: "hide", ea: "hide", count: "25", year: "all", month: "all", window: "all", platform: "all", price: "all", length: "all" };
   const state = Object.assign({}, DEFAULTS);
 
   const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));
@@ -317,7 +348,7 @@
   function thumbHTML(g, badges) {
     const cands = coverCandidates(g);
     const img = cands.length ? '<img class="cover" src="' + esc(cands[0]) + '" alt="" loading="lazy">' : "";
-    return '<div class="thumb">' + badges +
+    return '<div class="thumb">' + badges + Wishlist.button(g.game) +
            '<span class="thumb-fallback">' + esc(g.game) + '</span>' + img + '</div>';
   }
   function bodyHTML(g) {
@@ -361,8 +392,40 @@
   }
 
   // ---- filtering + render -------------------------------------------
+  // Numeric price, or null when the price is FREE / TBD / blank.
+  function priceValue(g) {
+    const p = String(g.price || "").trim();
+    if (!p || /^tb[da]$/i.test(p)) return null;
+    if (/^free$/i.test(p)) return 0;
+    const n = parseFloat(p.replace(/[^0-9.]/g, ""));
+    return isFinite(n) ? n : null;
+  }
+  function passesPrice(g) {
+    if (state.price === "all") return true;
+    const v = priceValue(g);
+    if (v == null) return false;              // unknown price can't match a price filter
+    if (state.price === "free") return v === 0;
+    if (state.price === "u10")  return v < 10;
+    if (state.price === "u20")  return v < 20;
+    if (state.price === "u40")  return v < 40;
+    if (state.price === "40up") return v >= 40;
+    return true;
+  }
+  function passesLength(g) {
+    if (state.length === "all") return true;
+    const h = Number(g.hours);
+    if (!isFinite(h) || h <= 0) return false; // TBD hours can't match a length filter
+    if (state.length === "u10")    return h < 10;
+    if (state.length === "10to25") return h >= 10 && h < 25;
+    if (state.length === "25to50") return h >= 25 && h < 50;
+    if (state.length === "50up")   return h >= 50;
+    return true;
+  }
+
   function passes(g) {
     if (state.platform !== "all" && !platformFamilies(g.platforms).includes(state.platform)) return false;
+    if (!passesPrice(g)) return false;
+    if (!passesLength(g)) return false;
     if (state.port === "only" && !g.port) return false;
     if (state.port === "hide" && g.port) return false;
     if (state.ea === "only" && !g.ea) return false;
@@ -453,6 +516,8 @@
       const match = PLATFORM_FAMILIES.find(f => f[0].toLowerCase() === plat.toLowerCase());
       state.platform = match ? match[0] : "all";
     }
+    seg("price",  ["all", "free", "u10", "u20", "u40", "40up"]);
+    seg("length", ["all", "u10", "10to25", "25to50", "50up"]);
     const y = p.get("year");  if (y && (y === "all" || /^20\d\d$/.test(y))) state.year = y;
     const m = p.get("month"); if (m) state.month = m;
   }
@@ -480,11 +545,13 @@
   selYear.addEventListener("change", () => { state.year = selYear.value; render(); });
   selMonth.addEventListener("change", () => { state.month = selMonth.value; render(); });
   selPlatform.addEventListener("change", () => { state.platform = selPlatform.value; render(); });
+  selPrice.addEventListener("change", () => { state.price = selPrice.value; render(); });
+  selLength.addEventListener("change", () => { state.length = selLength.value; render(); });
 
   document.getElementById("reset").addEventListener("click", () => {
     Object.assign(state, DEFAULTS);
     syncSegs(); syncWindow();
-    selYear.value = state.year; selMonth.value = "all"; selPlatform.value = "all";
+    selYear.value = state.year; selMonth.value = "all"; selPlatform.value = "all"; selPrice.value = "all"; selLength.value = "all";
     render();
   });
 
@@ -504,6 +571,8 @@
       selYear.value = state.year;
       selMonth.value = state.month;
       selPlatform.value = state.platform;
+      selPrice.value = state.price;
+      selLength.value = state.length;
       syncWindow();
       render();
     } catch (e) {

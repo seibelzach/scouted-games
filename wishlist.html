@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Wishlist — Scouted</title>
+<meta name="description" content="The games you've saved on Scouted, kept in your own browser." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/styles.css" />
+<script src="/wishlist.js"></script>
+<style>
+  .wl-bar { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin: 4px 0 18px; }
+  .wl-meta { font-family: "JetBrains Mono", monospace; font-size: .7rem; letter-spacing: .1em; color: var(--faint); }
+  .wl-clear { margin-left: auto; background: none; border: 1px solid var(--line); color: var(--muted);
+    border-radius: 9px; padding: 8px 13px; cursor: pointer; font-family: "JetBrains Mono", monospace;
+    font-size: .62rem; letter-spacing: .1em; text-transform: uppercase; transition: color .15s, border-color .15s; }
+  .wl-clear:hover { color: var(--tier-red); border-color: var(--tier-red); }
+  .wl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 16px; }
+  .thumb-fallback { position: absolute; inset: 0; display: none; align-items: center; justify-content: center;
+    text-align: center; padding: 12px; font-family: "Chakra Petch", sans-serif; font-weight: 700; font-size: .9rem;
+    line-height: 1.25; color: var(--muted); background: linear-gradient(160deg, var(--surface-2), var(--bg-2)); }
+  .price-tag { font-family: "JetBrains Mono", monospace; font-size: .78rem; color: var(--muted); }
+  .price-tag.free { color: var(--signal); }
+  .score-chip.tbd { width: auto; min-width: 34px; padding: 0 9px; border-style: dashed; border-color: var(--line);
+    color: var(--muted); font-family: "JetBrains Mono", monospace; font-size: .6rem; letter-spacing: .12em; }
+  .wl-empty { text-align: center; padding: 60px 20px; color: var(--muted); }
+  .wl-empty .big { font-family: "Chakra Petch", sans-serif; font-weight: 700; font-size: 1.1rem; color: var(--text); margin-bottom: 8px; }
+  .wl-empty p { max-width: 46ch; margin: 0 auto; line-height: 1.7; font-size: .92rem; }
+  .wl-empty a { color: var(--signal); }
+</style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="brand" href="/">
+        <span class="mark" aria-hidden="true"></span>
+        <span>
+          <h1>SCOUTED<span class="dot">.</span></h1>
+          <span class="tagline">Know what's worth playing</span>
+        </span>
+      </a>
+      <div class="nav-links">
+        <a class="nav-link" href="/">Home</a>
+        <a class="nav-link" href="/rankings.html">Rankings</a>
+        <a class="nav-link" href="/schedule.html">Schedule</a>
+        <a class="nav-link" href="/free.html">Free Games</a>
+        <a class="nav-link" href="/methodology.html">How We Score</a>
+        <a class="nav-link nav-wish active" href="/wishlist.html" title="Wishlist" aria-label="Wishlist"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg><span class="wish-count" data-wish-count style="display:none"></span></a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="wrap">
+    <section class="intro">
+      <div class="eyebrow">Saved by you</div>
+      <h2>Your <em>wishlist</em>.</h2>
+      <p>Games you've tapped the heart on. This list lives in this browser only, so it isn't tied to an account and won't follow you to another device.</p>
+    </section>
+
+    <div class="wl-bar">
+      <span class="wl-meta" id="wl-meta"></span>
+      <button class="wl-clear" id="wl-clear" type="button" style="display:none">Clear all</button>
+    </div>
+
+    <main class="wl-grid" id="wl-grid" aria-live="polite"></main>
+
+    <footer>
+      <div class="mono">SCOUTED // wishlist</div>
+      <p style="margin-top:8px;">Saved locally in your browser. Clearing site data will clear this list.</p>
+    </footer>
+  </div>
+
+<script>
+  const grid = document.getElementById("wl-grid");
+  const meta = document.getElementById("wl-meta");
+  const clearBtn = document.getElementById("wl-clear");
+
+  let ALL = [];
+
+  const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));
+  const tierClass = s => s >= 90 ? "diamond" : s >= 80 ? "blue" : s >= 70 ? "yellow" : s >= 60 ? "orange" : "red";
+  const splitPlatforms = p => String(p || "").split(/[,|]/).map(x => x.trim()).filter(Boolean);
+
+  function coverCandidates(g) {
+    const out = [];
+    if (g.cover) out.push(g.cover);
+    if (g.steam) {
+      const cdn    = "https://cdn.cloudflare.steamstatic.com/steam/apps/" + g.steam + "/";
+      const shared = "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/" + g.steam + "/";
+      [cdn + "header.jpg", shared + "header.jpg", cdn + "capsule_616x353.jpg",
+       shared + "capsule_616x353.jpg", cdn + "library_600x900.jpg"].forEach(u => {
+        if (!out.includes(u)) out.push(u);
+      });
+    }
+    return out;
+  }
+  function wireCover(el, g) {
+    const img = el.querySelector("img.cover");
+    const fb = el.querySelector(".thumb-fallback");
+    const show = () => { if (fb) fb.style.display = "flex"; };
+    if (!img) { show(); return; }
+    const alts = coverCandidates(g).slice(1);
+    img.addEventListener("error", function h() {
+      if (alts.length) { img.src = alts.shift(); }
+      else { img.style.display = "none"; show(); img.removeEventListener("error", h); }
+    });
+  }
+  function platHTML(g) {
+    const plats = splitPlatforms(g.platforms).map(p => '<span class="ptag">' + esc(p) + '</span>').join("");
+    const flags = (g.ea ? '<span class="ptag">EA</span>' : "") + (g.port ? '<span class="ptag">Port</span>' : "");
+    return plats + flags;
+  }
+  function priceHTML(g) {
+    const p = String(g.price || "").trim();
+    if (/^free$/i.test(p)) return '<span class="price-tag free">Free</span>';
+    if (!p || /^tb[da]$/i.test(p)) return '<span class="price-tag">$TBD</span>';
+    return '<span class="price-tag">' + esc(p) + '</span>';
+  }
+  function hoursHTML(g) {
+    const h = Number(g.hours);
+    if (!isFinite(h) || h <= 0) return "";
+    return '<span class="hours-tag" title="Approx. hours of content">' +
+             '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" ' +
+             'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+             '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>' + h + 'h</span>';
+  }
+  function storesHTML(g) {
+    if (!g.stores || !g.stores.length) return "";
+    return '<div class="store-row">' + g.stores.map(x => '<span class="store-tag">' + esc(x) + '</span>').join("") + '</div>';
+  }
+
+  function card(g) {
+    const el = document.createElement(g.url ? "a" : "div");
+    el.className = "card";
+    if (g.url) { el.href = g.url; el.target = "_blank"; el.rel = "noopener"; }
+    const chip = g.official
+      ? '<span class="score-chip ' + tierClass(g.score) + '"><span class="n">' + g.score + '</span></span>'
+      : '<span class="score-chip tbd">TBD</span>';
+    const cands = coverCandidates(g);
+    const img = cands.length ? '<img class="cover" src="' + esc(cands[0]) + '" alt="" loading="lazy">' : "";
+    el.innerHTML =
+      '<div class="thumb">' + chip + Wishlist.button(g.game) +
+        '<span class="thumb-fallback">' + esc(g.game) + '</span>' + img + '</div>' +
+      '<div class="body"><h4>' + esc(g.game) + '</h4>' +
+        '<div class="platforms">' + platHTML(g) + '</div>' +
+        '<div class="price-row">' + priceHTML(g) + hoursHTML(g) + '</div>' +
+        storesHTML(g) + '</div>';
+    wireCover(el, g);
+    return el;
+  }
+
+  function render() {
+    const saved = Wishlist.all();
+    clearBtn.style.display = saved.length ? "" : "none";
+
+    if (!saved.length) {
+      grid.innerHTML = '<div class="wl-empty"><div class="big">Nothing saved yet.</div>' +
+        '<p>Tap the heart on any game in the <a href="/rankings.html">Rankings</a> or ' +
+        '<a href="/schedule.html">Schedule</a> to keep track of it here.</p></div>';
+      meta.textContent = "";
+      return;
+    }
+
+    // Keep the order the games were saved in.
+    const byTitle = new Map(ALL.map(g => [g.game, g]));
+    const found = saved.map(t => byTitle.get(t)).filter(Boolean);
+    const missing = saved.length - found.length;
+
+    grid.innerHTML = "";
+    if (!found.length) {
+      grid.innerHTML = '<div class="wl-empty"><div class="big">Saved games aren\'t in the current list.</div>' +
+        '<p>Your saved titles aren\'t in the release data loaded right now. They\'ll reappear when that year is available.</p></div>';
+    } else {
+      found.forEach(g => grid.appendChild(card(g)));
+    }
+
+    meta.textContent = found.length + (found.length === 1 ? " game saved" : " games saved") +
+                       (missing ? " · " + missing + " not in the current list" : "");
+  }
+
+  clearBtn.addEventListener("click", () => {
+    if (confirm("Remove all games from your wishlist?")) Wishlist.clear();
+  });
+
+  // Re-render when a heart is toggled on this page.
+  document.addEventListener("wishlist:change", render);
+
+  (async function () {
+    meta.textContent = "Loading…";
+    try {
+      const res = await fetch("/api/games", { headers: { accept: "application/json" } });
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      if (!Array.isArray(data)) throw new Error();
+      ALL = data;
+      render();
+    } catch (e) {
+      grid.innerHTML = '<div class="wl-empty"><div class="big">Couldn\'t load game data.</div>' +
+        '<p>Your saved list is safe in this browser; the page just can\'t show the details right now.</p></div>';
+      meta.textContent = "";
+    }
+  })();
+</script>
+</body>
+</html>
