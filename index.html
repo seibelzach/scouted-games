@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Scouted — Scored. Sorted.</title>
-<meta name="description" content="Game rankings, scores, and free games — scouted so you know what's worth playing." />
+<meta name="description" content="Game rankings, scores, and free games, scouted so you know what's worth playing." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
@@ -27,7 +27,7 @@
         <span class="mark" aria-hidden="true"></span>
         <span>
           <h1>SCOUTED<span class="dot">.</span></h1>
-          <span class="tagline">Scouted. Scored. Sorted.</span>
+          <span class="tagline">Know what's worth playing</span>
         </span>
       </a>
       <div class="nav-links">
@@ -44,7 +44,7 @@
     <section class="intro">
       <div class="eyebrow">Scouting report</div>
       <h2>The games worth your time, <em>ranked and scouted</em>.</h2>
-      <p>Top releases, the year's best, what's coming next, and the best free games to grab right now — all in one place.</p>
+      <p>Top releases, the year's best, what's coming next, and the best free games to grab right now, all in one place.</p>
     </section>
 
     <!-- RAIL 1: Top releases last month -->
@@ -228,7 +228,7 @@
         .map((g, i) => ({ rank:i+1, title:g.game, score:g.score, meta:dateLabel(g), url:g.url, steam:g.steam, cover:g.cover }));
       railRecent.innerHTML = "";
       if (recent.length) recent.forEach(it => railRecent.appendChild(posterCard(it)));
-      else railRecent.innerHTML = '<div style="padding:28px 4px; color:var(--muted); font-family:\'JetBrains Mono\',monospace; font-size:.78rem; letter-spacing:.06em;">No scored releases in the last 30 days yet — check back soon.</div>';
+      else railRecent.innerHTML = '<div style="padding:28px 4px; color:var(--muted); font-family:\'JetBrains Mono\',monospace; font-size:.78rem; letter-spacing:.06em;">No scored releases in the last 30 days yet. Check back soon.</div>';
 
       const yr = now.getFullYear();
       const top = data
