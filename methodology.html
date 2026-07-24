@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>How We Score — Scouted</title>
-<meta name="description" content="How Scouted turns critic reviews, player sentiment, and game length into a single score — and what makes a game a gem." />
+<meta name="description" content="How Scouted turns critic reviews, player sentiment, and game length into a single score, and what makes a game a gem." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
@@ -32,16 +32,17 @@
   .m-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 20px; }
   .m-card h4 { font-family: "Chakra Petch", sans-serif; font-weight: 700; font-size: 1rem; margin-bottom: 8px; color: #fff; }
   .m-card p { color: var(--muted); font-size: .9rem; line-height: 1.65; }
-  .m-card .tag { display: inline-block; font-family: "JetBrains Mono", monospace; font-size: .58rem;
-    letter-spacing: .1em; text-transform: uppercase; color: var(--signal); border: 1px solid var(--signal-dim);
-    border-radius: 5px; padding: 3px 8px; margin-bottom: 10px; }
 
   /* tier ladder */
   .tiers { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; max-width: 640px; }
   .tier { display: flex; align-items: center; gap: 16px; background: var(--surface); border: 1px solid var(--line);
     border-radius: 12px; padding: 12px 16px; }
-  .tier .chipwrap { position: relative; width: 50px; height: 52px; display: grid; place-items: center; flex: none; }
-  .tier .score-chip { position: static; }
+  .chipwrap { position: relative; width: 50px; height: 52px; display: grid; place-items: center; flex: none; }
+  .chipwrap .score-chip { position: static; }
+  /* the real dashed TBD chip, matching the rankings page */
+  .score-chip.tbd { width: auto; min-width: 34px; padding: 0 9px; border-style: dashed; border-color: var(--line);
+    color: var(--muted); font-family: "JetBrains Mono", monospace; font-size: .6rem; letter-spacing: .12em; }
+  .m-card .chipwrap { width: auto; justify-items: start; height: auto; margin-bottom: 12px; }
   .tier .label { font-family: "Chakra Petch", sans-serif; font-weight: 600; font-size: .95rem; color: var(--text); }
   .tier .range { font-family: "JetBrains Mono", monospace; font-size: .72rem; color: var(--faint); letter-spacing: .08em; }
   .tier .desc { color: var(--muted); font-size: .88rem; line-height: 1.5; margin-top: 2px; }
@@ -99,10 +100,16 @@
         <div class="w-row">
           <span class="w-name">Hours of content</span><span class="w-pct">10%</span>
           <div class="w-bar"><div class="w-fill" style="width:10%"></div></div>
-          <div class="w-note">Typical time to finish, from HowLongToBeat. Length isn't quality — a tight six-hour game can outscore a bloated sixty-hour one — so it's deliberately the smallest slice, and it stops counting past a cap. It's there to reward substance, not padding.</div>
+          <div class="w-note">How much total content a game actually offers: a typical playthrough plus the optional side content most first-time players will see. Most of this comes from HowLongToBeat; where that data is missing or thin, it's set from reviews and community consensus. Length isn't quality, so it's deliberately the smallest slice and it stops counting past a cap. It's there to reward substance, not padding.</div>
         </div>
         <div class="w-total">60 + 30 + 10 = 100</div>
       </div>
+    </section>
+
+    <section class="m-section">
+      <h3>Why player sentiment counts</h3>
+      <p>Critics play a game once, usually on a deadline and often on hardware set up for the job. Players buy it, install it on their own machine, and live with it. When a game ships broken on PC, leans on predatory monetization, or ignores accessibility, that lands in player reviews long before it shows up in a review score, if it ever does at all.</p>
+      <p>Scouted counts that, deliberately. Sentiment like this isn't review bombing; it's honest criticism of the product people actually paid for, and professional reviews tend to set it aside for reasons that have little to do with the person buying the game. Two releases with the same content and the same design don't deserve the same score if one of them was unplayable for most of its buyers for two weeks.</p>
     </section>
 
     <section class="m-section">
@@ -110,14 +117,14 @@
       <p>Not every game can be scored the day it launches. Scouted tracks two states so a thin early sample never gets dressed up as a verdict.</p>
       <div class="m-grid">
         <div class="m-card">
-          <span class="tag">Scored</span>
+          <div class="chipwrap"><span class="score-chip blue"><span class="n">85</span></span></div>
           <h4>A real number</h4>
           <p>The game has a critic consensus and enough player data to stand behind. This is what appears in the rankings, and it's the only number Scouted presents as final.</p>
         </div>
         <div class="m-card">
-          <span class="tag">TBD</span>
+          <div class="chipwrap"><span class="score-chip tbd">TBD</span></div>
           <h4>Not yet</h4>
-          <p>Missing a critic score, too few player reviews, or not out yet. Scouted tracks a provisional read internally so a game isn't invisible — but it shows as <strong>TBD</strong> rather than a confident number it hasn't earned.</p>
+          <p>Missing a critic score, too few player reviews, or not out yet. Scouted tracks a provisional read internally so a game isn't invisible, but it shows as <strong>TBD</strong> rather than a confident number it hasn't earned.</p>
         </div>
       </div>
     </section>
@@ -164,18 +171,20 @@
       </div>
 
       <div class="callout">
-        <strong style="color:var(--text)">Why the gem?</strong> A 90 isn't just "a bit better than an 88." It's the point where critical acclaim, player sentiment, and substance all line up at once — which almost never happens. The cut-gem treatment exists because that rarity should be visible from across the page.
+        <strong style="color:var(--text)">Why the gem?</strong> A 90 isn't just a bit better than an 88. It's the point where critical acclaim, player sentiment, and substance all line up at once, which almost never happens. Most years produce only a handful.
       </div>
     </section>
 
     <section class="m-section">
-      <h3>What Scouted tracks but doesn't score</h3>
+      <h3>Re-releases, expansions, and Early Access</h3>
+      <p>Not every release is a straightforward new game. Here's how each kind is handled.</p>
       <ul class="m-list">
-        <li><strong>Early Access.</strong> An unfinished game can't be judged as a finished one. EA titles are tracked and shown, but their score waits for 1.0.</li>
-        <li><strong>Ports and remasters.</strong> Listed so you know they're coming, but a 2026 port of a 2015 game isn't competing for 2026's rankings.</li>
-        <li><strong>DLC and expansions.</strong> Tracked against the base game rather than ranked on their own.</li>
+        <li><strong>Early Access.</strong> An unfinished game usually can't be judged as a finished one, so most EA titles wait for 1.0 before they're scored. It does happen, but only when reception is broad and consistent enough to mean something.</li>
+        <li><strong>Ports and remasters.</strong> Scored, so you can tell whether the new version is any good, but kept out of the official rankings. A 2026 port of a 2015 game isn't competing with this year's new releases.</li>
+        <li><strong>Remakes.</strong> Treated as new releases. A remake is new work, so it's ranked alongside everything else rather than lumped in with ports and remasters.</li>
+        <li><strong>DLC and expansions.</strong> Scored and ranked like any other release. In practice it's rare for one to land high enough to compete with full games, but nothing stops it.</li>
       </ul>
-      <p>You can filter any of these in or out on the <a href="/rankings.html" style="color:var(--signal)">Rankings</a> page. By default they're hidden, so what you see is this year's actual new releases.</p>
+      <p>You can filter ports, remasters, and Early Access in or out on the <a href="/rankings.html" style="color:var(--signal)">Rankings</a> page. By default they're hidden, so what you see is this year's new releases.</p>
     </section>
 
     <section class="m-section">
@@ -183,7 +192,7 @@
       <ul class="m-list">
         <li><strong>Critic scores</strong> — aggregated professional review data.</li>
         <li><strong>Player ratings</strong> — Steam user reviews, all-time.</li>
-        <li><strong>Length</strong> — HowLongToBeat community submissions.</li>
+        <li><strong>Length</strong> — HowLongToBeat community submissions, filled in with reviews and community consensus where HowLongToBeat is thin or missing.</li>
         <li><strong>Release dates, platforms, prices, artwork</strong> — storefronts and games databases, checked by hand.</li>
       </ul>
       <p>The release list itself is curated manually. Every entry is matched and reviewed by a person, which is why the catalog is deliberate rather than exhaustive.</p>
@@ -192,12 +201,12 @@
     <section class="m-section">
       <h3>The honest limitations</h3>
       <ul class="m-list">
-        <li>Steam-only player data means console-exclusive games lean harder on their critic score.</li>
-        <li>Player review percentages can be skewed by review-bombing over things unrelated to the game itself.</li>
-        <li>Length data is crowd-sourced and thin for new or niche releases.</li>
+        <li>Console-exclusive games lean harder on their critic score, because there's no Steam user data to act as a counterweight.</li>
+        <li>Player scores can occasionally be distorted by organized review bombing over things genuinely unrelated to the game, which is a different animal from the honest criticism described above.</li>
+        <li>Length data is crowd-sourced and thin for new or niche releases, which is where reviews and community consensus fill the gap.</li>
         <li>A single number can't capture whether a game is <em>for you</em>. It's a starting point, not a verdict.</li>
       </ul>
-      <p>Scores are recalculated as new data lands, so a game's number can move — most often in the first few weeks after release.</p>
+      <p>Scores are recalculated as new data lands, so a game's number can move, most often in the first few weeks after release.</p>
     </section>
 
     <footer>
