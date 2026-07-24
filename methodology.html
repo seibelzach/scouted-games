@@ -54,6 +54,17 @@
 
   .callout { margin-top: 20px; border-left: 2px solid var(--signal-dim); padding: 4px 0 4px 18px;
     color: var(--muted); line-height: 1.7; max-width: 68ch; }
+
+  @media (max-width: 560px) {
+    .m-section { margin-top: 34px; }
+    .m-card { padding: 15px 16px; }
+    .tier { gap: 12px; padding: 11px 13px; }
+    .tier .chipwrap { width: 44px; height: 46px; }
+    .tier .desc { font-size: .84rem; }
+    .m-list { padding-left: 18px; line-height: 1.7; }
+    .callout { padding-left: 14px; }
+    .w-note { font-size: .84rem; }
+  }
 </style>
 </head>
 <body>
@@ -66,6 +77,8 @@
           <span class="tagline">Know what's worth playing</span>
         </span>
       </a>
+      <input type="checkbox" id="navToggle" class="nav-toggle" aria-hidden="true" tabindex="-1">
+      <label class="nav-burger" for="navToggle" aria-label="Menu"><span></span><span></span><span></span></label>
       <div class="nav-links">
         <a class="nav-link" href="/">Home</a>
         <a class="nav-link" href="/rankings.html">Rankings</a>

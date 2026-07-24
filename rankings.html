@@ -72,9 +72,24 @@
     font-family:"JetBrains Mono",monospace; font-size:.62rem; letter-spacing:.18em; text-transform:uppercase; color:var(--faint); }
   .rank-divider span.line { flex:1; height:1px; background:var(--line); }
 
+  .filt-toggle { position:absolute; width:1px; height:1px; opacity:0; pointer-events:none; }
+  .filt-bar { display:none; }
+
   @media (max-width:900px) {
-    .layout { grid-template-columns:1fr; gap:18px; }
-    .filters { position:static; }
+    .layout { grid-template-columns:1fr; gap:14px; }
+    .filters { position:static; display:none; }
+    .filt-toggle:checked ~ .filters { display:block; }
+    /* tapping the bar opens the panel instead of burying the games */
+    .filt-bar { display:flex; align-items:center; justify-content:space-between; gap:10px;
+      background:var(--surface); border:1px solid var(--line); border-radius:12px;
+      padding:13px 16px; cursor:pointer;
+      font-family:"Chakra Petch",sans-serif; font-weight:700; font-size:.9rem;
+      letter-spacing:.04em; text-transform:uppercase; color:var(--text); }
+    .filt-caret { color:var(--signal); transition:transform .2s ease; }
+    .filt-toggle:checked ~ .filt-bar .filt-caret { transform:rotate(180deg); }
+    .filters-head .ttl { display:none; }   /* the bar is the heading on mobile */
+    .filters-head { justify-content:flex-end; margin-bottom:12px; }
+    .fsel, .seg button, .seg2 button { min-height:42px; }   /* comfortable tap targets */
   }
 </style>
 </head>
@@ -88,6 +103,8 @@
           <span class="tagline">Know what's worth playing</span>
         </span>
       </a>
+      <input type="checkbox" id="navToggle" class="nav-toggle" aria-hidden="true" tabindex="-1">
+      <label class="nav-burger" for="navToggle" aria-label="Menu"><span></span><span></span><span></span></label>
       <div class="nav-links">
         <a class="nav-link" href="/">Home</a>
         <a class="nav-link active" href="/rankings.html">Rankings</a>
@@ -107,6 +124,11 @@
     </section>
 
     <div class="layout">
+      <input type="checkbox" id="filtToggle" class="filt-toggle" aria-hidden="true" tabindex="-1">
+      <label class="filt-bar" for="filtToggle">
+        <span>Filters</span>
+        <span class="filt-caret" aria-hidden="true">&#9662;</span>
+      </label>
       <aside class="filters">
         <div class="filters-head">
           <span class="ttl">Filters</span>

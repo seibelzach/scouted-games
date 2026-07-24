@@ -29,6 +29,14 @@
   .wl-empty .big { font-family: "Chakra Petch", sans-serif; font-weight: 700; font-size: 1.1rem; color: var(--text); margin-bottom: 8px; }
   .wl-empty p { max-width: 46ch; margin: 0 auto; line-height: 1.7; font-size: .92rem; }
   .wl-empty a { color: var(--signal); }
+
+  @media (max-width: 560px) {
+    .wl-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+    .wl-bar { gap: 10px; }
+    .wl-clear { margin-left: 0; min-height: 42px; }
+    .wl-empty { padding: 44px 12px; }
+  }
+  @media (max-width: 400px) { .wl-grid { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
@@ -41,6 +49,8 @@
           <span class="tagline">Know what's worth playing</span>
         </span>
       </a>
+      <input type="checkbox" id="navToggle" class="nav-toggle" aria-hidden="true" tabindex="-1">
+      <label class="nav-burger" for="navToggle" aria-label="Menu"><span></span><span></span><span></span></label>
       <div class="nav-links">
         <a class="nav-link" href="/">Home</a>
         <a class="nav-link" href="/rankings.html">Rankings</a>

@@ -54,6 +54,18 @@
     padding:12px; font-family:"Chakra Petch",sans-serif; font-weight:700; font-size:.9rem; line-height:1.25;
     color:var(--muted); background:linear-gradient(160deg,var(--surface-2),var(--bg-2)); }
 
+  @media (max-width:720px){
+    /* Nested vertical scrollers fight each other on touch, so let the timeline
+       flow with the page instead of trapping it in its own scroll box. */
+    .cal-scroll { max-height:none; overflow-y:visible; padding:8px 0 10px; }
+    .cal-controls { gap:10px; margin-bottom:16px; }
+    .cal-field { flex:1 1 140px; }
+    .fsel { min-width:0; width:100%; min-height:42px; }
+    .cal-today { min-height:42px; }
+    .cal-meta { margin-left:0; width:100%; }
+    .day-group { padding-left:20px; padding-bottom:26px; margin-left:4px; }
+    .day-head::before { left:-27px; }
+  }
   @media (max-width:560px){ .cal-card { width:170px; } }
 </style>
 </head>
@@ -67,6 +79,8 @@
           <span class="tagline">Know what's worth playing</span>
         </span>
       </a>
+      <input type="checkbox" id="navToggle" class="nav-toggle" aria-hidden="true" tabindex="-1">
+      <label class="nav-burger" for="navToggle" aria-label="Menu"><span></span><span></span><span></span></label>
       <div class="nav-links">
         <a class="nav-link" href="/">Home</a>
         <a class="nav-link" href="/rankings.html">Rankings</a>
@@ -261,7 +275,16 @@
     // Current month opens at today (or the next release day); other months start at the top.
     requestAnimationFrame(() => {
       const target = todayGroup || ((Y === CUR_Y && M === CUR_M) ? firstFutureGroup : null);
-      scroll.scrollTop = target ? Math.max(0, target.offsetTop - 8) : 0;
+      const nested = scroll.scrollHeight > scroll.clientHeight + 4;
+      if (nested) {
+        // Desktop: the timeline is its own scroll box, so the page stays put.
+        scroll.scrollTop = target ? Math.max(0, target.offsetTop - 8) : 0;
+      } else if (target) {
+        // Mobile: the timeline flows with the page, so move the page instead.
+        const navH = 64;
+        const y = target.getBoundingClientRect().top + window.pageYOffset - navH - 14;
+        window.scrollTo(0, Math.max(0, y));
+      }
     });
   }
 
