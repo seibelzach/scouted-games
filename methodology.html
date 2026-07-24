@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>How We Score — Scouted</title>
+<meta name="description" content="How Scouted turns critic reviews, player sentiment, and game length into a single score — and what makes a game a gem." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/styles.css" />
+<style>
+  .m-section { margin: 46px 0 0; }
+  .m-section > h3 { font-family: "Chakra Petch", sans-serif; font-weight: 600; letter-spacing: .04em;
+    font-size: 1.05rem; text-transform: uppercase; margin-bottom: 6px; }
+  .m-section > p { color: var(--muted); line-height: 1.7; max-width: 68ch; margin-top: 10px; }
+  .m-lede { color: var(--muted); line-height: 1.7; max-width: 68ch; }
+
+  /* weight bars */
+  .weights { margin-top: 22px; display: flex; flex-direction: column; gap: 16px; max-width: 640px; }
+  .w-row { display: grid; grid-template-columns: 1fr auto; gap: 4px 14px; align-items: baseline; }
+  .w-name { font-family: "Chakra Petch", sans-serif; font-weight: 600; font-size: .95rem; color: var(--text); }
+  .w-pct { font-family: "JetBrains Mono", monospace; font-size: .95rem; color: var(--signal); }
+  .w-bar { grid-column: 1 / -1; height: 8px; border-radius: 4px; background: var(--surface-2); overflow: hidden; }
+  .w-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--signal-dim), var(--signal)); }
+  .w-note { grid-column: 1 / -1; color: var(--muted); font-size: .88rem; line-height: 1.6; margin-top: 2px; }
+  .w-total { font-family: "JetBrains Mono", monospace; font-size: .72rem; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--faint); margin-top: 4px; }
+
+  /* two-up cards */
+  .m-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; margin-top: 20px; }
+  .m-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 20px; }
+  .m-card h4 { font-family: "Chakra Petch", sans-serif; font-weight: 700; font-size: 1rem; margin-bottom: 8px; color: #fff; }
+  .m-card p { color: var(--muted); font-size: .9rem; line-height: 1.65; }
+  .m-card .tag { display: inline-block; font-family: "JetBrains Mono", monospace; font-size: .58rem;
+    letter-spacing: .1em; text-transform: uppercase; color: var(--signal); border: 1px solid var(--signal-dim);
+    border-radius: 5px; padding: 3px 8px; margin-bottom: 10px; }
+
+  /* tier ladder */
+  .tiers { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; max-width: 640px; }
+  .tier { display: flex; align-items: center; gap: 16px; background: var(--surface); border: 1px solid var(--line);
+    border-radius: 12px; padding: 12px 16px; }
+  .tier .chipwrap { position: relative; width: 50px; height: 52px; display: grid; place-items: center; flex: none; }
+  .tier .score-chip { position: static; }
+  .tier .label { font-family: "Chakra Petch", sans-serif; font-weight: 600; font-size: .95rem; color: var(--text); }
+  .tier .range { font-family: "JetBrains Mono", monospace; font-size: .72rem; color: var(--faint); letter-spacing: .08em; }
+  .tier .desc { color: var(--muted); font-size: .88rem; line-height: 1.5; margin-top: 2px; }
+
+  .m-list { margin-top: 14px; color: var(--muted); line-height: 1.8; max-width: 68ch; padding-left: 20px; }
+  .m-list li { margin-bottom: 6px; }
+  .m-list strong { color: var(--text); font-weight: 600; }
+
+  .callout { margin-top: 20px; border-left: 2px solid var(--signal-dim); padding: 4px 0 4px 18px;
+    color: var(--muted); line-height: 1.7; max-width: 68ch; }
+</style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="brand" href="/">
+        <span class="mark" aria-hidden="true"></span>
+        <span>
+          <h1>SCOUTED<span class="dot">.</span></h1>
+          <span class="tagline">Know what's worth playing</span>
+        </span>
+      </a>
+      <div class="nav-links">
+        <a class="nav-link" href="/">Home</a>
+        <a class="nav-link" href="/rankings.html">Rankings</a>
+        <a class="nav-link" href="/schedule.html">Schedule</a>
+        <a class="nav-link" href="/free.html">Free Games</a>
+        <a class="nav-link active" href="/methodology.html">How We Score</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="wrap">
+    <section class="intro">
+      <div class="eyebrow">Methodology</div>
+      <h2>How a game gets its <em>score</em>.</h2>
+      <p>Every number on this site comes from the same formula, applied the same way to every game. No sponsored placements, no thumb on the scale. Here's exactly what goes into it.</p>
+    </section>
+
+    <section class="m-section">
+      <h3>The formula</h3>
+      <p>A Scouted Score blends three things: what critics thought, what players think, and how much game you actually get.</p>
+
+      <div class="weights">
+        <div class="w-row">
+          <span class="w-name">Critic score</span><span class="w-pct">60%</span>
+          <div class="w-bar"><div class="w-fill" style="width:60%"></div></div>
+          <div class="w-note">The professional review consensus, on a 0–100 scale. It carries the most weight because it reflects many independent judgments rather than one.</div>
+        </div>
+        <div class="w-row">
+          <span class="w-name">Player rating</span><span class="w-pct">30%</span>
+          <div class="w-bar"><div class="w-fill" style="width:30%"></div></div>
+          <div class="w-note">The share of Steam user reviews that are positive. Critics play a game once on a deadline; players live with it. This is the counterweight.</div>
+        </div>
+        <div class="w-row">
+          <span class="w-name">Hours of content</span><span class="w-pct">10%</span>
+          <div class="w-bar"><div class="w-fill" style="width:10%"></div></div>
+          <div class="w-note">Typical time to finish, from HowLongToBeat. Length isn't quality — a tight six-hour game can outscore a bloated sixty-hour one — so it's deliberately the smallest slice, and it stops counting past a cap. It's there to reward substance, not padding.</div>
+        </div>
+        <div class="w-total">60 + 30 + 10 = 100</div>
+      </div>
+    </section>
+
+    <section class="m-section">
+      <h3>Scored vs. awaiting a score</h3>
+      <p>Not every game can be scored the day it launches. Scouted tracks two states so a thin early sample never gets dressed up as a verdict.</p>
+      <div class="m-grid">
+        <div class="m-card">
+          <span class="tag">Scored</span>
+          <h4>A real number</h4>
+          <p>The game has a critic consensus and enough player data to stand behind. This is what appears in the rankings, and it's the only number Scouted presents as final.</p>
+        </div>
+        <div class="m-card">
+          <span class="tag">TBD</span>
+          <h4>Not yet</h4>
+          <p>Missing a critic score, too few player reviews, or not out yet. Scouted tracks a provisional read internally so a game isn't invisible — but it shows as <strong>TBD</strong> rather than a confident number it hasn't earned.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="m-section">
+      <h3>What the tiers mean</h3>
+      <p>The color of a score tells you where a game lands at a glance.</p>
+      <div class="tiers">
+        <div class="tier">
+          <div class="chipwrap"><span class="score-chip diamond"><span class="n">93</span></span></div>
+          <div>
+            <div class="label">Gem <span class="range">· 90+</span></div>
+            <div class="desc">Rare. Critics and players both loved it, and there's real substance behind it. A few a year, if that.</div>
+          </div>
+        </div>
+        <div class="tier">
+          <div class="chipwrap"><span class="score-chip blue"><span class="n">85</span></span></div>
+          <div>
+            <div class="label">Excellent <span class="range">· 80–89</span></div>
+            <div class="desc">Confidently worth your time. Buy it if the genre is your thing.</div>
+          </div>
+        </div>
+        <div class="tier">
+          <div class="chipwrap"><span class="score-chip yellow"><span class="n">74</span></span></div>
+          <div>
+            <div class="label">Good <span class="range">· 70–79</span></div>
+            <div class="desc">Solid with caveats. Usually worth it on sale or if the premise grabs you.</div>
+          </div>
+        </div>
+        <div class="tier">
+          <div class="chipwrap"><span class="score-chip orange"><span class="n">64</span></span></div>
+          <div>
+            <div class="label">Mixed <span class="range">· 60–69</span></div>
+            <div class="desc">Real problems alongside real ideas. For the curious and the patient.</div>
+          </div>
+        </div>
+        <div class="tier">
+          <div class="chipwrap"><span class="score-chip red"><span class="n">48</span></span></div>
+          <div>
+            <div class="label">Weak <span class="range">· 59 and below</span></div>
+            <div class="desc">Didn't come together. Listed for completeness, not as a recommendation.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout">
+        <strong style="color:var(--text)">Why the gem?</strong> A 90 isn't just "a bit better than an 88." It's the point where critical acclaim, player sentiment, and substance all line up at once — which almost never happens. The cut-gem treatment exists because that rarity should be visible from across the page.
+      </div>
+    </section>
+
+    <section class="m-section">
+      <h3>What Scouted tracks but doesn't score</h3>
+      <ul class="m-list">
+        <li><strong>Early Access.</strong> An unfinished game can't be judged as a finished one. EA titles are tracked and shown, but their score waits for 1.0.</li>
+        <li><strong>Ports and remasters.</strong> Listed so you know they're coming, but a 2026 port of a 2015 game isn't competing for 2026's rankings.</li>
+        <li><strong>DLC and expansions.</strong> Tracked against the base game rather than ranked on their own.</li>
+      </ul>
+      <p>You can filter any of these in or out on the <a href="/rankings.html" style="color:var(--signal)">Rankings</a> page. By default they're hidden, so what you see is this year's actual new releases.</p>
+    </section>
+
+    <section class="m-section">
+      <h3>Where the data comes from</h3>
+      <ul class="m-list">
+        <li><strong>Critic scores</strong> — aggregated professional review data.</li>
+        <li><strong>Player ratings</strong> — Steam user reviews, all-time.</li>
+        <li><strong>Length</strong> — HowLongToBeat community submissions.</li>
+        <li><strong>Release dates, platforms, prices, artwork</strong> — storefronts and games databases, checked by hand.</li>
+      </ul>
+      <p>The release list itself is curated manually. Every entry is matched and reviewed by a person, which is why the catalog is deliberate rather than exhaustive.</p>
+    </section>
+
+    <section class="m-section">
+      <h3>The honest limitations</h3>
+      <ul class="m-list">
+        <li>Steam-only player data means console-exclusive games lean harder on their critic score.</li>
+        <li>Player review percentages can be skewed by review-bombing over things unrelated to the game itself.</li>
+        <li>Length data is crowd-sourced and thin for new or niche releases.</li>
+        <li>A single number can't capture whether a game is <em>for you</em>. It's a starting point, not a verdict.</li>
+      </ul>
+      <p>Scores are recalculated as new data lands, so a game's number can move — most often in the first few weeks after release.</p>
+    </section>
+
+    <footer>
+      <div class="mono">SCOUTED // methodology</div>
+      <p style="margin-top:8px;">Questions about a specific score? The formula above is applied identically to every game in the catalog.</p>
+    </footer>
+  </div>
+</body>
+</html>
