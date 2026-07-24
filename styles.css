@@ -267,6 +267,8 @@ body::after {
 .store-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 9px; }
 .store-tag { font-family: "JetBrains Mono", monospace; font-size: .58rem; letter-spacing: .08em; text-transform: uppercase; color: var(--text); background: var(--surface-2); border: 1px solid var(--signal-dim); border-radius: 5px; padding: 3px 8px; }
 .price-row { display: flex; align-items: baseline; gap: 10px; margin-top: auto; }
+.hours-tag { display: inline-flex; align-items: center; gap: 4px; font-family: "JetBrains Mono", monospace; font-size: .72rem; color: var(--muted); }
+.hours-tag svg { width: 12px; height: 12px; flex: none; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; align-self: center; }
 .was { font-family: "JetBrains Mono", monospace; font-size: .82rem; color: var(--faint); text-decoration: line-through; }
 .now { font-family: "Chakra Petch", sans-serif; font-weight: 700; font-size: .9rem; color: var(--signal); letter-spacing: .06em; }
 .claim {

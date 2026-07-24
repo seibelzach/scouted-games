@@ -272,7 +272,9 @@
     const h = Number(g.hours);
     if (!isFinite(h) || h <= 0) return '';   // TBD / blank -> show nothing
     return '<span class="hours-tag" title="Approx. hours of content">' +
-             '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>' +
+             '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" ' +
+             'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+             '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>' +
              h + 'h</span>';
   }
   function storesHTML(g) {
