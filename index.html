@@ -176,7 +176,8 @@
   }
   const MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   const dateLabel = g => ((g.month ? MON[g.month-1] : "") + (g.day ? " " + g.day : "")).trim();
-  const shortPlat = p => String(p||"").split(/[,|]/).map(x=>x.trim()).filter(Boolean).slice(0,2).join(" · ");
+  const shortPlat = p => { const a = String(p||"").split(/[,|]/).map(x=>x.trim()).filter(Boolean);
+    return a.length > 3 ? a.slice(0,3).join(" · ") + " +" + (a.length - 3) : a.join(" · "); };
 
   // Scheduled-release card: no rank, no score — just art, a date chip, and platforms.
   function scheduleCard(item){

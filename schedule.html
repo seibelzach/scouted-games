@@ -183,7 +183,7 @@
     });
   }
   function platHTML(g) {
-    const plats = splitPlatforms(g.platforms).slice(0, 2).map(p => '<span class="ptag">' + esc(p) + '</span>').join("");
+    const plats = splitPlatforms(g.platforms).map(p => '<span class="ptag">' + esc(p) + '</span>').join("");
     const flags = (g.ea ? '<span class="ptag">EA</span>' : "") + (g.port ? '<span class="ptag">Port</span>' : "");
     return plats + flags;
   }
