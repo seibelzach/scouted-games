@@ -268,6 +268,13 @@
     if (!p || /^tb[da]$/i.test(p)) return '<span class="price-tag">$TBD</span>';
     return '<span class="price-tag">' + esc(p) + '</span>';
   }
+  function hoursHTML(g) {
+    const h = Number(g.hours);
+    if (!isFinite(h) || h <= 0) return '';   // TBD / blank -> show nothing
+    return '<span class="hours-tag" title="Approx. hours of content">' +
+             '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>' +
+             h + 'h</span>';
+  }
   function storesHTML(g) {
     if (!g.stores || !g.stores.length) return '';
     return '<div class="store-row">' + g.stores.map(s => '<span class="store-tag">' + esc(s) + '</span>').join('') + '</div>';
@@ -281,7 +288,7 @@
   function bodyHTML(g) {
     return '<div class="body"><h4>' + esc(g.game) + '</h4>' +
            '<div class="platforms">' + platHTML(g) + '</div>' +
-           '<div class="price-row">' + priceHTML(g) + '</div>' +
+           '<div class="price-row">' + priceHTML(g) + hoursHTML(g) + '</div>' +
            storesHTML(g) + '</div>';
   }
   function scoredCard(g, rank, delay) {
