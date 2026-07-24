@@ -92,6 +92,10 @@
         <label for="selMonth">Month</label>
         <select class="fsel" id="selMonth"></select>
       </div>
+      <div class="cal-field">
+        <label for="selPlatform">Platform</label>
+        <select class="fsel" id="selPlatform"></select>
+      </div>
       <button class="cal-today" id="jumpToday" type="button">This month</button>
       <span class="cal-meta" id="cal-meta"></span>
     </div>
@@ -114,6 +118,7 @@
   const meta     = document.getElementById("cal-meta");
   const selYear  = document.getElementById("selYear");
   const selMonth = document.getElementById("selMonth");
+  const selPlatform = document.getElementById("selPlatform");
 
   const MON_FULL = ["January","February","March","April","May","June","July","August","September","October","November","December"];
   const DOW = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
@@ -123,11 +128,34 @@
   const CUR_Y = NOW.getFullYear();
   const CUR_M = NOW.getMonth() + 1;
   const CUR_D = NOW.getDate();
-  let state = { year: CUR_Y, month: CUR_M };
+  let state = { year: CUR_Y, month: CUR_M, platform: "all" };
 
   const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));
   const tierClass = s => s >= 90 ? "diamond" : s >= 80 ? "blue" : s >= 70 ? "yellow" : s >= 60 ? "orange" : "red";
   const splitPlatforms = p => String(p || "").split(/[,|]/).map(x => x.trim()).filter(Boolean);
+
+  // Fold the free-text platform column into canonical families (same list as Rankings).
+  const PLATFORM_FAMILIES = [
+    ["PC",          /\bpc\b|\bwindows\b|\bsteam\b(?!\s*vr)/i],
+    ["PlayStation", /\bps\s*[3459]\b|\ball\s*ps\b|playstation|\bpsvr\b/i],
+    ["Xbox",        /xbox|\bxb(xs|sx|1)\b/i],
+    ["Switch",      /switch|nintendo/i],
+    ["Mobile",      /\bios\b|android|mobile|\bipad\b|iphone/i],
+    ["VR",          /\bvr\b|quest|psvr|steam\s*vr|rift|index/i],
+    ["Cloud",       /luna|stadia|geforce\s*now|cloud/i],
+  ];
+  // A bare "All" token is Scouted shorthand (since 2021) for
+  // PS4 | PS5 | Xbox One | Xbox Series X/S | Switch | PC.
+  // It is NOT the same as "All PS" or "All Xbox", which mean only that family.
+  const BARE_ALL = ["PC", "PlayStation", "Xbox", "Switch"];
+  function platformFamilies(raw) {
+    const str = String(raw || "");
+    const bareAll = str.split(/[,|]/).some(t => /^all$/i.test(t.trim()));
+    const hit = new Set();
+    PLATFORM_FAMILIES.forEach(([name, re]) => { if (re.test(str)) hit.add(name); });
+    if (bareAll) BARE_ALL.forEach(n => hit.add(n));
+    return PLATFORM_FAMILIES.map(f => f[0]).filter(n => hit.has(n));
+  }
   const isFree = p => !p || /^free$/i.test(p.trim());
 
   function coverCandidates(g) {
@@ -188,7 +216,8 @@
 
   function render() {
     const Y = state.year, M = state.month;
-    const games = ALL.filter(g => g.year === Y && g.month === M && g.day);
+    const games = ALL.filter(g => g.year === Y && g.month === M && g.day)
+                     .filter(g => state.platform === "all" || platformFamilies(g.platforms).includes(state.platform));
 
     const byDay = new Map();
     games.forEach(g => { if (!byDay.has(g.day)) byDay.set(g.day, []); byDay.get(g.day).push(g); });
@@ -196,7 +225,8 @@
 
     track.innerHTML = "";
     if (!days.length) {
-      track.innerHTML = '<div class="empty">No releases listed for ' + MON_FULL[M-1] + ' ' + Y + '.</div>';
+      const scope = state.platform === "all" ? "" : " on " + state.platform;
+      track.innerHTML = '<div class="empty">No releases listed for ' + MON_FULL[M-1] + ' ' + Y + scope + '.</div>';
       meta.textContent = "0 releases";
       return;
     }
@@ -243,10 +273,20 @@
     selYear.innerHTML = yh;
     selMonth.innerHTML = MON_FULL.map((name, i) =>
       '<option value="' + (i+1) + '"' + ((i+1) === state.month ? " selected" : "") + '>' + name + '</option>').join("");
+
+    const present = new Set();
+    ALL.forEach(g => platformFamilies(g.platforms).forEach(f => present.add(f)));
+    let ph = '<option value="all">All platforms</option>';
+    PLATFORM_FAMILIES.forEach(([name]) => {
+      if (present.has(name)) ph += '<option value="' + name + '">' + name + '</option>';
+    });
+    selPlatform.innerHTML = ph;
+    selPlatform.value = state.platform;
   }
 
   selYear.addEventListener("change", () => { state.year = Number(selYear.value); render(); });
   selMonth.addEventListener("change", () => { state.month = Number(selMonth.value); render(); });
+  selPlatform.addEventListener("change", () => { state.platform = selPlatform.value; render(); });
   document.getElementById("jumpToday").addEventListener("click", () => {
     state.year = CUR_Y; state.month = CUR_M;
     selYear.value = String(CUR_Y); selMonth.value = String(CUR_M);

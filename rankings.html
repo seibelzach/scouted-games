@@ -132,6 +132,13 @@
         </div>
 
         <div class="f-sec">
+          <span class="f-label">Platform</span>
+          <div class="f-row">
+            <select class="fsel" id="selPlatform"></select>
+          </div>
+        </div>
+
+        <div class="f-sec">
           <span class="f-label">Show</span>
           <div class="f-row">
             <div class="seg" data-filter="count">
@@ -197,18 +204,43 @@
   const meta = document.getElementById("rank-meta");
   const selYear = document.getElementById("selYear");
   const selMonth = document.getElementById("selMonth");
+  const selPlatform = document.getElementById("selPlatform");
   const rowYear = document.getElementById("row-year");
   const rowMonth = document.getElementById("row-month");
 
   let ALL = [];
   const CURRENT_YEAR = new Date().getFullYear();
   // Defaults: hide ports & EA, top 25, current year, all months, all-time window.
-  const DEFAULTS = { port: "hide", ea: "hide", count: "25", year: "all", month: "all", window: "all" };
+  const DEFAULTS = { port: "hide", ea: "hide", count: "25", year: "all", month: "all", window: "all", platform: "all" };
   const state = Object.assign({}, DEFAULTS);
 
   const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));
   const tierClass = s => s >= 90 ? "diamond" : s >= 80 ? "blue" : s >= 70 ? "yellow" : s >= 60 ? "orange" : "red";
   const splitPlatforms = p => String(p || "").split(/[,|]/).map(x => x.trim()).filter(Boolean);
+
+  // Fold the free-text platform column into canonical families so the filter
+  // stays short ("All PS | Switch 1 + 2 | PC" -> PlayStation, Switch, PC).
+  const PLATFORM_FAMILIES = [
+    ["PC",          /\bpc\b|\bwindows\b|\bsteam\b(?!\s*vr)/i],
+    ["PlayStation", /\bps\s*[3459]\b|\ball\s*ps\b|playstation|\bpsvr\b/i],
+    ["Xbox",        /xbox|\bxb(xs|sx|1)\b/i],
+    ["Switch",      /switch|nintendo/i],
+    ["Mobile",      /\bios\b|android|mobile|\bipad\b|iphone/i],
+    ["VR",          /\bvr\b|quest|psvr|steam\s*vr|rift|index/i],
+    ["Cloud",       /luna|stadia|geforce\s*now|cloud/i],
+  ];
+  // A bare "All" token is Scouted shorthand (since 2021) for
+  // PS4 | PS5 | Xbox One | Xbox Series X/S | Switch | PC.
+  // It is NOT the same as "All PS" or "All Xbox", which mean only that family.
+  const BARE_ALL = ["PC", "PlayStation", "Xbox", "Switch"];
+  function platformFamilies(raw) {
+    const str = String(raw || "");
+    const bareAll = str.split(/[,|]/).some(t => /^all$/i.test(t.trim()));
+    const hit = new Set();
+    PLATFORM_FAMILIES.forEach(([name, re]) => { if (re.test(str)) hit.add(name); });
+    if (bareAll) BARE_ALL.forEach(n => hit.add(n));
+    return PLATFORM_FAMILIES.map(f => f[0]).filter(n => hit.has(n));
+  }
   const isFree = p => !p || /^free$/i.test(p.trim());
 
   // ---- rolling release window ---------------------------------------
@@ -330,6 +362,7 @@
 
   // ---- filtering + render -------------------------------------------
   function passes(g) {
+    if (state.platform !== "all" && !platformFamilies(g.platforms).includes(state.platform)) return false;
     if (state.port === "only" && !g.port) return false;
     if (state.port === "hide" && g.port) return false;
     if (state.ea === "only" && !g.ea) return false;
@@ -379,6 +412,18 @@
   }
 
   // ---- year dropdown (auto-enable years that have data) --------------
+  // Only list families that actually appear in the data.
+  function buildPlatforms() {
+    const present = new Set();
+    ALL.forEach(g => platformFamilies(g.platforms).forEach(f => present.add(f)));
+    let html = '<option value="all">All platforms</option>';
+    PLATFORM_FAMILIES.forEach(([name]) => {
+      if (present.has(name)) html += '<option value="' + name + '">' + name + '</option>';
+    });
+    selPlatform.innerHTML = html;
+    selPlatform.value = state.platform;
+  }
+
   function buildYears() {
     const present = new Set(ALL.map(g => g.year));
     let html = '<option value="all">All years</option>';
@@ -403,6 +448,11 @@
     seg("ea",     ["all", "only", "hide"]);
     seg("count",  ["10", "25", "50", "all"]);
     seg("window", ["all", "6mo", "90d", "30d"]);
+    const plat = p.get("platform");
+    if (plat && (plat === "all" || PLATFORM_FAMILIES.some(f => f[0].toLowerCase() === plat.toLowerCase()))) {
+      const match = PLATFORM_FAMILIES.find(f => f[0].toLowerCase() === plat.toLowerCase());
+      state.platform = match ? match[0] : "all";
+    }
     const y = p.get("year");  if (y && (y === "all" || /^20\d\d$/.test(y))) state.year = y;
     const m = p.get("month"); if (m) state.month = m;
   }
@@ -429,11 +479,12 @@
   });
   selYear.addEventListener("change", () => { state.year = selYear.value; render(); });
   selMonth.addEventListener("change", () => { state.month = selMonth.value; render(); });
+  selPlatform.addEventListener("change", () => { state.platform = selPlatform.value; render(); });
 
   document.getElementById("reset").addEventListener("click", () => {
     Object.assign(state, DEFAULTS);
     syncSegs(); syncWindow();
-    selYear.value = state.year; selMonth.value = "all";
+    selYear.value = state.year; selMonth.value = "all"; selPlatform.value = "all";
     render();
   });
 
@@ -447,10 +498,12 @@
       if (!Array.isArray(data)) throw new Error();
       ALL = data;
       buildYears();
+      buildPlatforms();
       applyUrlParams();
       syncSegs();
       selYear.value = state.year;
       selMonth.value = state.month;
+      selPlatform.value = state.platform;
       syncWindow();
       render();
     } catch (e) {
