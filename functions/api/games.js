@@ -118,6 +118,7 @@ function shape(rows) {
       port: /^yes$/i.test((r[COL.port] || '').trim()),
       genres: (r[COL.genres] || '').trim(),
       cover: (r[COL.cover] || '').trim(),
+      hours: num(r[COL.hours]),      // Hours of Content (col N); null when TBD/blank
       steam: hasSteam ? steam : '',
       stores: storesOf(r[COL.store]),
       url
