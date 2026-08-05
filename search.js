@@ -149,6 +149,10 @@
     overlay.querySelector(".search-close").addEventListener("click", close);
     input.addEventListener("input", onType);
     input.addEventListener("keydown", onKey);
+    results.addEventListener("click", function (e) {
+      var row = e.target.closest ? e.target.closest(".search-row") : null;
+      if (row && row.getAttribute("data-nolink")) e.preventDefault();  // nothing to open yet
+    });
   }
 
   function storeUrl(g) {
@@ -157,15 +161,22 @@
     return g.url || (g.steam ? "https://store.steampowered.com/app/" + g.steam + "/" : "");
   }
 
+  function tierClass(s) {
+    return s >= 90 ? "diamond" : s >= 80 ? "blue" : s >= 70 ? "yellow" : s >= 60 ? "orange" : "red";
+  }
+
   function rowHtml(g, i) {
     var meta = [];
     if (g.year) meta.push(g.year);
     var plats = String(g.platforms || "").split(/[,|]/).map(function (x) { return x.trim(); }).filter(Boolean);
     if (plats.length) meta.push(plats.slice(0, 3).join(" \u00b7 "));
-    var chip = g.official ? '<span class="s-score">' + g.score + "</span>"
+    var chip = g.official ? '<span class="s-score ' + tierClass(g.score) + '">' + g.score + "</span>"
              : (g.score != null ? '<span class="s-score tbd">TBD</span>' : "");
-    return '<a class="search-row" role="option" data-i="' + i + '" href="' + esc(storeUrl(g)) + '"' +
-           (storeUrl(g) ? ' target="_blank" rel="noopener"' : "") + '>' +
+    var url = storeUrl(g);
+    // A row with no destination still opens on click (via onRowClick); href="#"
+    // would jump to the top of the page, and href="" would reload it.
+    return '<a class="search-row" role="option" data-i="' + i + '"' +
+           (url ? ' href="' + esc(url) + '" target="_blank" rel="noopener"' : ' data-nolink="1"') + '>' +
              '<span class="s-name">' + esc(g.game) + "</span>" +
              '<span class="s-meta">' + esc(meta.join("  \u00b7  ")) + "</span>" +
              chip +
