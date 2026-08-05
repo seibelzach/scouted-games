@@ -10,6 +10,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="/styles.css" />
 <script src="/wishlist.js"></script>
+<script src="/search.js"></script>
 <style>
   /* page-specific (everything else comes from styles.css) */
   .layout { display:grid; grid-template-columns:248px 1fr; gap:28px; align-items:start; padding:6px 0 10px; }
@@ -75,6 +76,11 @@
   .filt-toggle { position:absolute; width:1px; height:1px; opacity:0; pointer-events:none; }
   .filt-bar { display:none; }
 
+  .fsearch { width:100%; background:var(--surface); color:var(--text); border:1px solid var(--line);
+    border-radius:9px; padding:11px 12px; font-family:"Hanken Grotesk",sans-serif; font-size:.9rem; }
+  .fsearch:focus { outline:none; border-color:var(--signal-dim); }
+  .fsearch::placeholder { color:var(--faint); }
+
   @media (max-width:900px) {
     .layout { grid-template-columns:1fr; gap:14px; }
     .filters { position:static; display:none; }
@@ -103,6 +109,7 @@
           <span class="tagline">Know what's worth playing</span>
         </span>
       </a>
+      <button class="nav-search" data-search-open aria-label="Search games" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><span class="lbl">Search</span><span class="kbd">/</span></button>
       <input type="checkbox" id="navToggle" class="nav-toggle" aria-hidden="true" tabindex="-1">
       <label class="nav-burger" for="navToggle" aria-label="Menu"><span></span><span></span><span></span></label>
       <div class="nav-links">
@@ -153,6 +160,10 @@
               <button type="button" data-val="hide" class="active">Hide</button>
             </div>
           </div>
+        </div>
+
+        <div class="f-sec">
+          <input type="search" class="fsearch" id="fSearch" placeholder="Search these games…" autocomplete="off" aria-label="Search the ranked list">
         </div>
 
         <div class="f-sec">
@@ -256,6 +267,7 @@
   const selYear = document.getElementById("selYear");
   const selMonth = document.getElementById("selMonth");
   const selPlatform = document.getElementById("selPlatform");
+  const fSearch = document.getElementById("fSearch");
   const selPrice = document.getElementById("selPrice");
   const selLength = document.getElementById("selLength");
   const rowYear = document.getElementById("row-year");
@@ -264,7 +276,7 @@
   let ALL = [];
   const CURRENT_YEAR = new Date().getFullYear();
   // Defaults: hide ports & EA, top 25, current year, all months, all-time window.
-  const DEFAULTS = { port: "hide", ea: "hide", count: "25", year: "all", month: "all", window: "all", platform: "all", price: "all", length: "all" };
+  const DEFAULTS = { port: "hide", ea: "hide", count: "25", year: "all", month: "all", window: "all", platform: "all", price: "all", length: "all", q: "" };
   const state = Object.assign({}, DEFAULTS);
 
   const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));
@@ -445,6 +457,7 @@
   }
 
   function passes(g) {
+    if (state.q && (!window.ScoutedSearch || ScoutedSearch.score(g.game, state.q) <= 0)) return false;
     if (state.platform !== "all" && !platformFamilies(g.platforms).includes(state.platform)) return false;
     if (!passesPrice(g)) return false;
     if (!passesLength(g)) return false;
@@ -463,6 +476,10 @@
 
   function render() {
     const items = ALL.filter(passes);
+    // A search looks across the whole loaded catalogue, so sort matches by relevance.
+    if (state.q && window.ScoutedSearch) {
+      items.sort((a, b) => ScoutedSearch.score(b.game, state.q) - ScoutedSearch.score(a.game, state.q));
+    }
     const scored = items.filter(g => g.official).sort((a, b) => b.score - a.score);
     const tbd    = items.filter(g => !g.official && g.score != null).sort((a, b) => b.score - a.score);
 
@@ -567,13 +584,19 @@
   selYear.addEventListener("change", () => { state.year = selYear.value; render(); });
   selMonth.addEventListener("change", () => { state.month = selMonth.value; render(); });
   selPlatform.addEventListener("change", () => { state.platform = selPlatform.value; render(); });
+  fSearch.addEventListener("input", () => {
+    state.q = fSearch.value;
+    // While searching, widen scope so a hit in another month/year still shows.
+    if (state.q) { state.window = "all"; state.month = "all"; syncSegs && syncSegs(); syncWindow && syncWindow(); }
+    render();
+  });
   selPrice.addEventListener("change", () => { state.price = selPrice.value; render(); });
   selLength.addEventListener("change", () => { state.length = selLength.value; render(); });
 
   document.getElementById("reset").addEventListener("click", () => {
     Object.assign(state, DEFAULTS);
     syncSegs(); syncWindow();
-    selYear.value = state.year; selMonth.value = "all"; selPlatform.value = "all"; selPrice.value = "all"; selLength.value = "all";
+    selYear.value = state.year; selMonth.value = "all"; selPlatform.value = "all"; selPrice.value = "all"; selLength.value = "all"; fSearch.value = "";
     render();
   });
 

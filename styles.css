@@ -284,6 +284,44 @@ body::after {
 .nav-wish svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .wish-count { font-family: "JetBrains Mono", monospace; font-size: .62rem; line-height: 1;
   background: var(--signal); color: #0b1b2e; border-radius: 999px; padding: 3px 6px; font-weight: 700; }
+
+/* ---- search ---- */
+.nav-search { display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 9px;
+  padding: 8px 12px; color: var(--muted); font-family: "Hanken Grotesk", sans-serif;
+  transition: color .15s, border-color .15s; }
+.nav-search:hover { color: var(--text); border-color: var(--signal-dim); }
+.nav-search svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.nav-search .lbl { font-size: .82rem; }
+.nav-search .kbd { font-family: "JetBrains Mono", monospace; font-size: .6rem; border: 1px solid var(--line);
+  border-radius: 5px; padding: 2px 5px; color: var(--faint); }
+
+.search-overlay { position: fixed; inset: 0; z-index: 200; display: none;
+  background: rgba(6,9,13,.72); backdrop-filter: blur(4px); padding: 12vh 16px 16px; }
+.search-overlay.show { display: block; }
+.search-panel { max-width: 620px; margin: 0 auto; background: var(--bg-2);
+  border: 1px solid var(--line); border-radius: 16px; overflow: hidden;
+  box-shadow: 0 30px 80px rgba(0,0,0,.6); }
+.search-box { display: flex; align-items: center; gap: 12px; padding: 16px 18px; border-bottom: 1px solid var(--line); }
+.search-ico { color: var(--signal); flex: none; }
+.search-input { flex: 1; background: none; border: none; outline: none; color: var(--text);
+  font-family: "Hanken Grotesk", sans-serif; font-size: 1.05rem; }
+.search-input::placeholder { color: var(--faint); }
+.search-close { flex: none; background: var(--surface); border: 1px solid var(--line); color: var(--muted);
+  border-radius: 6px; padding: 4px 8px; font-family: "JetBrains Mono", monospace; font-size: .6rem; cursor: pointer; }
+.search-results { max-height: 60vh; overflow-y: auto; }
+.search-results.has { padding: 6px; }
+.search-row { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 4px 12px;
+  padding: 11px 14px; border-radius: 10px; text-decoration: none; color: var(--text); }
+.search-row:hover, .search-row.active { background: var(--surface); }
+.search-row .s-name { font-family: "Chakra Petch", sans-serif; font-weight: 600; font-size: .98rem; }
+.search-row .s-meta { grid-column: 1; font-family: "JetBrains Mono", monospace; font-size: .66rem;
+  letter-spacing: .04em; color: var(--faint); }
+.search-row .s-score { grid-column: 2; grid-row: 1 / span 2; font-family: "JetBrains Mono", monospace;
+  font-weight: 700; font-size: .82rem; color: var(--signal); border: 1px solid var(--signal-dim);
+  border-radius: 7px; padding: 4px 8px; }
+.search-row .s-score.tbd { color: var(--muted); border-color: var(--line); border-style: dashed; font-size: .62rem; }
+.search-empty { padding: 22px 16px; color: var(--muted); font-size: .92rem; }
 .price-row { display: flex; align-items: baseline; gap: 10px; margin-top: auto; }
 .hours-tag { display: inline-flex; align-items: center; gap: 4px; font-family: "JetBrains Mono", monospace; font-size: .72rem; color: var(--muted); }
 .hours-tag svg { width: 12px; height: 12px; flex: none; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; align-self: center; }
@@ -324,6 +362,8 @@ footer .mono { font-family: "JetBrains Mono", monospace; font-size: .68rem; lett
 @media (max-width: 880px) {
   .nav-burger { display: grid; }
   .nav-inner { gap: 10px; }
+  .nav-search { margin-left: auto; padding: 8px 10px; }
+  .nav-search .lbl, .nav-search .kbd { display: none; }   /* icon-only next to the burger */
   .nav-links {
     display: none; position: absolute; top: 100%; left: 0; right: 0;
     flex-direction: column; align-items: stretch; gap: 2px;
