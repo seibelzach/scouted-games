@@ -7,23 +7,27 @@
 // from the same domain. You don't need to touch this file.
 
 export async function onRequest(context) {
-  const UPSTREAM = "https://www.gamerpower.com/api/giveaways?type=game";
+  // Prefer game giveaways, but fall back to the full feed (loot, beta, other)
+  // when there are no active game giveaways, so the list rarely runs dry.
+  const GAMES = "https://www.gamerpower.com/api/giveaways?type=game";
+  const ALL   = "https://www.gamerpower.com/api/giveaways";
+  const opts = {
+    headers: { "User-Agent": "ScoutedGames/1.0 (+https://scoutedgames.com)" },
+    cf: { cacheTtl: 600, cacheEverything: true },
+  };
+
+  async function grab(url) {
+    const res = await fetch(url, opts);
+    if (!res.ok) throw new Error("Upstream " + res.status);
+    const raw = await res.json();
+    return Array.isArray(raw) ? raw : [];   // status-object -> empty
+  }
 
   try {
-    const res = await fetch(UPSTREAM, {
-      headers: { "User-Agent": "ScoutedGames/1.0 (+https://scoutedgames.com)" },
-      // Cache GamerPower's response on Cloudflare for 10 minutes so we stay
-      // well under their rate limit and the page loads fast.
-      cf: { cacheTtl: 600, cacheEverything: true },
-    });
+    let list = await grab(GAMES);
+    if (!list.length) list = await grab(ALL);   // game feed dry -> widen
 
-    if (!res.ok) {
-      throw new Error("Upstream responded " + res.status);
-    }
-
-    const data = await res.json();
-
-    return new Response(JSON.stringify(data), {
+    return new Response(JSON.stringify(list), {
       headers: {
         "content-type": "application/json; charset=utf-8",
         "access-control-allow-origin": "*",
@@ -31,15 +35,13 @@ export async function onRequest(context) {
       },
     });
   } catch (err) {
-    return new Response(
-      JSON.stringify({ error: "Could not load giveaways right now." }),
-      {
-        status: 502,
-        headers: {
-          "content-type": "application/json; charset=utf-8",
-          "access-control-allow-origin": "*",
-        },
-      }
-    );
+    return new Response(JSON.stringify([]), {
+      status: 200,
+      headers: {
+        "content-type": "application/json; charset=utf-8",
+        "access-control-allow-origin": "*",
+        "cache-control": "public, max-age=60",
+      },
+    });
   }
 }
