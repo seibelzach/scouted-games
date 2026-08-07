@@ -13,6 +13,7 @@ const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRJHp6pQ_DWusfH
 const COL = {
   rawg: 1, steam: 2, date: 4, game: 5, platforms: 6, store: 7,
   ea: 8, port: 9, price: 10, steamRating: 11, critic: 12, hours: 13,
+  discount: 21, origPrice: 22,   // V, W — from the Steam price refresh
   gameScore: 14, ghostScore: 15, genres: 16, tags: 17, cover: 18
 };
 
@@ -119,6 +120,8 @@ function shape(rows) {
       genres: (r[COL.genres] || '').trim(),
       cover: (r[COL.cover] || '').trim(),
       hours: num(r[COL.hours]),      // Hours of Content (col N); null when TBD/blank
+      discount: num(r[COL.discount]) || 0,      // % off (col V), 0 when not on sale
+      origPrice: (r[COL.origPrice] || '').trim(),  // list price (col W)
       steam: hasSteam ? steam : '',
       stores: storesOf(r[COL.store]),
       url
