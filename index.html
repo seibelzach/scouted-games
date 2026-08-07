@@ -14,20 +14,21 @@
 <script src="wishlist.js"></script>
 <script src="search.js"></script>
 <style>
-  /* Bargain Finds: three wide deal cards */
-  .bargain-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  /* Bargain Finds: up to five deal cards */
+  .bargain-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
   .bargain { position: relative; display: flex; gap: 14px; background: var(--surface);
     border: 1px solid var(--line); border-radius: 14px; padding: 12px; overflow: hidden;
     text-decoration: none; color: inherit; transition: border-color .15s, transform .12s; }
   .bargain:hover { border-color: var(--signal-dim); transform: translateY(-2px); }
-  .bargain .b-art { position: relative; width: 108px; flex: none; aspect-ratio: 3/4; border-radius: 9px;
+  .bargain .b-art { position: relative; width: 96px; flex: none; aspect-ratio: 3/4; border-radius: 9px;
     overflow: hidden; background: linear-gradient(160deg, var(--surface-2), var(--bg-2)); }
   .bargain .b-art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
   .bargain .b-body { display: flex; flex-direction: column; min-width: 0; padding: 2px 2px 2px 0; }
-  .bargain .b-title { font-family: "Chakra Petch", sans-serif; font-weight: 700; font-size: .98rem;
-    color: #fff; line-height: 1.2; margin-bottom: 6px; }
-  .bargain .b-meta { font-family: "JetBrains Mono", monospace; font-size: .64rem; color: var(--faint);
-    letter-spacing: .05em; margin-bottom: auto; }
+  .bargain .b-title { font-family: "Chakra Petch", sans-serif; font-weight: 700; font-size: .95rem;
+    color: #fff; line-height: 1.2; margin-bottom: 5px; padding-right: 34px; }
+  .bargain .b-meta { font-family: "JetBrains Mono", monospace; font-size: .62rem; color: var(--faint);
+    letter-spacing: .05em; margin-bottom: 8px; }
+  .bargain .b-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: auto; }
   .bargain .b-price { display: flex; align-items: baseline; gap: 8px; margin-top: 10px; }
   .bargain .b-now { font-family: "JetBrains Mono", monospace; font-weight: 700; font-size: 1rem; color: #3ad98a; }
   .bargain .b-was { font-family: "JetBrains Mono", monospace; font-size: .74rem; color: var(--faint); text-decoration: line-through; }
@@ -235,6 +236,10 @@
         <span class="score-chip ${tierClass(g.score)} b-score"><span class="n">${g.score}</span></span>
         <div class="b-title">${esc(g.game)}</div>
         <div class="b-meta">${esc(g.meta || "")}</div>
+        <div class="b-tags">
+          ${(g.platforms||[]).map(p=>`<span class="ptag">${esc(p)}</span>`).join("")}
+          ${(g.stores||[]).map(s=>`<span class="store-tag">${esc(s)}</span>`).join("")}
+        </div>
         <div class="b-price"><span class="b-now">${esc(g.price)}</span><span class="b-was">${esc(g.origPrice)}</span></div>
       </div>`;
     const el = a.querySelector(".b-art img");
@@ -305,12 +310,12 @@
       if (recent.length) recent.forEach(it => railRecent.appendChild(posterCard(it)));
       else railRecent.innerHTML = '<div style="padding:28px 4px; color:var(--muted); font-family:\'JetBrains Mono\',monospace; font-size:.78rem; letter-spacing:.06em;">No scored releases in the last 30 days yet. Check back soon.</div>';
 
-      // Bargain Finds: scored 85+, currently discounted, best discount first, top 3.
+      // Bargain Finds: scored 85+, currently discounted, best discount first, top 5.
       const bargains = data
         .filter(g => g.official && g.score >= 85 && (Number(g.discount) || 0) > 0
                      && g.origPrice && String(g.origPrice).trim() !== String(g.price).trim())
         .sort((a, b) => b.discount - a.discount || b.score - a.score)
-        .slice(0, 3);
+        .slice(0, 5);
       const bargainSection = document.getElementById("bargain-section");
       const bargainGrid = document.getElementById("bargain-grid");
       bargainSection.style.display = "";
@@ -318,7 +323,9 @@
         bargainGrid.innerHTML = "";
         bargains.forEach(g => bargainGrid.appendChild(bargainCard({
           game:g.game, score:g.score, price:g.price, origPrice:g.origPrice, discount:g.discount,
-          meta: dateLabel(g) || String(g.year), url:g.url, steam:g.steam, cover:g.cover
+          meta: dateLabel(g) || String(g.year), url:g.url, steam:g.steam, cover:g.cover,
+          platforms: String(g.platforms||"").split(/[,|]/).map(x=>x.trim()).filter(Boolean).slice(0,3),
+          stores: g.stores || []
         })));
       } else {
         bargainGrid.innerHTML = '<div class="bargain-empty">No bargain deals right now!</div>';
@@ -383,7 +390,9 @@
   const cleanTitle = t => (t||"").replace(/\s*giveaway\s*$/i,"").replace(/\s*\([^)]*\)\s*$/,"").trim() || t;
   const parseWorth = w => { if(!w||w==="N/A") return 0; const n = parseFloat(String(w).replace(/[^0-9.]/g,"")); return isNaN(n)?0:n; };
   function timeLeft(end){
+    if(!end || end === "N/A") return {label:"Limited time", urgent:false};
     const d = new Date(end.replace(" ","T"));
+    if(isNaN(d)) return {label:"Limited time", urgent:false};
     const diff = d - new Date();
     const days = Math.floor(diff/86400000);
     const hrs = Math.floor((diff%86400000)/3600000);
@@ -393,10 +402,17 @@
   function priceHTML(w){ return (!w||w==="N/A"||w==="$0.00") ? '<span class="now">FREE</span>' : '<span class="was">'+w+'</span><span class="now">FREE</span>'; }
 
   function topByValue(items){
-    return (Array.isArray(items)?items:[])
-      .filter(g => g.end_date && g.end_date !== "N/A" && !isNaN(new Date(g.end_date.replace(" ","T"))) && (new Date(g.end_date.replace(" ","T")) - new Date()) > 0)
-      .sort((a,b) => parseWorth(b.worth) - parseWorth(a.worth))
-      .slice(0,4);
+    const all = Array.isArray(items) ? items : [];
+    const future = g => {
+      if (!g.end_date || g.end_date === "N/A") return false;
+      const d = new Date(g.end_date.replace(" ", "T"));
+      return !isNaN(d) && (d - new Date()) > 0;
+    };
+    const byWorth = (a, b) => parseWorth(b.worth) - parseWorth(a.worth);
+    // Prefer giveaways with a live deadline; if none, show the best-value ones anyway.
+    const dated = all.filter(future).sort(byWorth);
+    const pool = dated.length ? dated : all.slice().sort(byWorth);
+    return pool.slice(0, 4);
   }
   function renderFree(items){
     freeGrid.innerHTML = "";
