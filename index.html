@@ -365,6 +365,7 @@
     const track = rail.querySelector(".rail-track");
     const prev = rail.querySelector('[data-dir="prev"]');
     const next = rail.querySelector('[data-dir="next"]');
+    if (!track || !prev || !next) return;   // e.g. Bargain Finds has no arrows/track
     const step = () => Math.max(track.clientWidth * 0.8, 200);
     prev.addEventListener("click", () => track.scrollBy({left: -step(), behavior: "smooth"}));
     next.addEventListener("click", () => track.scrollBy({left: step(), behavior: "smooth"}));
@@ -440,15 +441,19 @@
     });
   }
   (async function(){
+    let data = null;
     try {
       const res = await fetch("/api/giveaways", {headers:{accept:"application/json"}});
-      if(!res.ok) throw new Error();
-      const data = await res.json();
-      if(!Array.isArray(data)) throw new Error();
-      renderFree(topByValue(data));
-    } catch(e) {
-      renderFree(topByValue(FREE_SAMPLE));
-    }
+      if (res.ok) {
+        const j = await res.json();
+        if (Array.isArray(j)) data = j;
+        else if (j && Array.isArray(j.giveaways)) data = j.giveaways;   // tolerate a wrapped shape
+      }
+    } catch(e) { /* network error -> fall through */ }
+
+    // Prefer live data; only use the sample if the feed truly gave us nothing.
+    const picked = topByValue(data && data.length ? data : FREE_SAMPLE);
+    renderFree(picked);
   })();
 </script>
 </body>
