@@ -79,7 +79,7 @@
       <p>Top releases, the year's best, what's coming next, and the best free games to grab right now, all in one place.</p>
     </section>
 
-    <!-- RAIL 1: Top releases last month -->
+    <!-- RAIL 1: Top recent releases -->
     <section class="rail">
       <div class="rail-head">
         <div>
@@ -95,18 +95,23 @@
       <div class="rail-track" id="rail-lastmonth"></div>
     </section>
 
-    <!-- BARGAIN FINDS: discounted 85+ games (top 3, only shows when there are deals) -->
-    <section class="rail" id="bargain-section" style="display:none;">
+    <!-- RAIL 2: Top of the year -->
+    <section class="rail">
       <div class="rail-head">
         <div>
-          <h3>Bargain Finds</h3>
-          <div class="sub">Great games (85+) on sale right now.</div>
+          <h3>Top of <span id="year-label">2026</span></h3>
+          <div class="sub">The highest-rated games of the year so far.</div>
+          <a class="see-all" href="rankings.html" style="display:inline-block; margin-top:9px;">See full rankings →</a>
+        </div>
+        <div class="rail-ctrls">
+          <button class="rail-btn" data-dir="prev" aria-label="Scroll left">‹</button>
+          <button class="rail-btn" data-dir="next" aria-label="Scroll right">›</button>
         </div>
       </div>
-      <div class="bargain-grid" id="bargain-grid"></div>
+      <div class="rail-track" id="rail-ytd"></div>
     </section>
 
-    <!-- RAIL 2: Scheduled releases (upcoming) -->
+    <!-- RAIL 3: Scheduled releases (upcoming) -->
     <section class="rail">
       <div class="rail-head">
         <div>
@@ -122,20 +127,15 @@
       <div class="rail-track" id="rail-schedule"></div>
     </section>
 
-    <!-- RAIL 3: Top of the year -->
-    <section class="rail">
+    <!-- BARGAIN FINDS: discounted 85+ games (top 6; shows a message when there are none) -->
+    <section class="rail" id="bargain-section" style="display:none;">
       <div class="rail-head">
         <div>
-          <h3>Top of <span id="year-label">2026</span></h3>
-          <div class="sub">The highest-rated games of the year so far.</div>
-          <a class="see-all" href="rankings.html" style="display:inline-block; margin-top:9px;">See full rankings →</a>
-        </div>
-        <div class="rail-ctrls">
-          <button class="rail-btn" data-dir="prev" aria-label="Scroll left">‹</button>
-          <button class="rail-btn" data-dir="next" aria-label="Scroll right">›</button>
+          <h3>Bargain Finds</h3>
+          <div class="sub">Great games (85+) on sale right now.</div>
         </div>
       </div>
-      <div class="rail-track" id="rail-ytd"></div>
+      <div class="bargain-grid" id="bargain-grid"></div>
     </section>
 
     <!-- FREE GAMES (live, biggest value first) -->
@@ -310,12 +310,12 @@
       if (recent.length) recent.forEach(it => railRecent.appendChild(posterCard(it)));
       else railRecent.innerHTML = '<div style="padding:28px 4px; color:var(--muted); font-family:\'JetBrains Mono\',monospace; font-size:.78rem; letter-spacing:.06em;">No scored releases in the last 30 days yet. Check back soon.</div>';
 
-      // Bargain Finds: scored 85+, currently discounted, best discount first, top 5.
+      // Bargain Finds: scored 85+, currently discounted, best discount first, top 6.
       const bargains = data
         .filter(g => g.official && g.score >= 85 && (Number(g.discount) || 0) > 0
                      && g.origPrice && String(g.origPrice).trim() !== String(g.price).trim())
         .sort((a, b) => b.discount - a.discount || b.score - a.score)
-        .slice(0, 5);
+        .slice(0, 6);
       const bargainSection = document.getElementById("bargain-section");
       const bargainGrid = document.getElementById("bargain-grid");
       bargainSection.style.display = "";
