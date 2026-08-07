@@ -360,10 +360,22 @@
     const flags = (g.ea ? '<span class="ptag">EA</span>' : "") + (g.port ? '<span class="ptag">Port</span>' : "");
     return plats + flags;
   }
+  // A game is "on sale" only when Steam gave us a discount AND a distinct list price.
+  function onSale(g) {
+    const d = Number(g.discount) || 0;
+    return d > 0 && g.origPrice && String(g.origPrice).trim() && String(g.origPrice).trim() !== String(g.price).trim();
+  }
+  function dealRibbon(g) {
+    return onSale(g) ? '<span class="deal-ribbon">-' + (Number(g.discount) || 0) + '%</span>' : '';
+  }
   function priceHTML(g) {
     const p = String(g.price || '').trim();
     if (/^free$/i.test(p)) return '<span class="price-tag free">Free</span>';
     if (!p || /^tb[da]$/i.test(p)) return '<span class="price-tag">$TBD</span>';
+    if (onSale(g)) {
+      return '<span class="price-tag now">' + esc(p) + '</span>' +
+             '<span class="was-price">' + esc(String(g.origPrice).trim()) + '</span>';
+    }
     return '<span class="price-tag">' + esc(p) + '</span>';
   }
   function hoursHTML(g) {
@@ -382,7 +394,7 @@
   function thumbHTML(g, badges) {
     const cands = coverCandidates(g);
     const img = cands.length ? '<img class="cover" src="' + esc(cands[0]) + '" alt="" loading="lazy">' : "";
-    return '<div class="thumb">' + badges + Wishlist.button(g.game) +
+    return '<div class="thumb">' + badges + dealRibbon(g) + Wishlist.button(g.game) +
            '<span class="thumb-fallback">' + esc(g.game) + '</span>' + img + '</div>';
   }
   function bodyHTML(g) {

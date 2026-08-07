@@ -14,6 +14,29 @@
 <script src="wishlist.js"></script>
 <script src="search.js"></script>
 <style>
+  /* Bargain Finds: three wide deal cards */
+  .bargain-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .bargain { position: relative; display: flex; gap: 14px; background: var(--surface);
+    border: 1px solid var(--line); border-radius: 14px; padding: 12px; overflow: hidden;
+    text-decoration: none; color: inherit; transition: border-color .15s, transform .12s; }
+  .bargain:hover { border-color: var(--signal-dim); transform: translateY(-2px); }
+  .bargain .b-art { position: relative; width: 108px; flex: none; aspect-ratio: 3/4; border-radius: 9px;
+    overflow: hidden; background: linear-gradient(160deg, var(--surface-2), var(--bg-2)); }
+  .bargain .b-art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .bargain .b-body { display: flex; flex-direction: column; min-width: 0; padding: 2px 2px 2px 0; }
+  .bargain .b-title { font-family: "Chakra Petch", sans-serif; font-weight: 700; font-size: .98rem;
+    color: #fff; line-height: 1.2; margin-bottom: 6px; }
+  .bargain .b-meta { font-family: "JetBrains Mono", monospace; font-size: .64rem; color: var(--faint);
+    letter-spacing: .05em; margin-bottom: auto; }
+  .bargain .b-price { display: flex; align-items: baseline; gap: 8px; margin-top: 10px; }
+  .bargain .b-now { font-family: "JetBrains Mono", monospace; font-weight: 700; font-size: 1rem; color: #3ad98a; }
+  .bargain .b-was { font-family: "JetBrains Mono", monospace; font-size: .74rem; color: var(--faint); text-decoration: line-through; }
+  .bargain .b-score { position: absolute; top: 12px; right: 12px; }
+  .bargain-empty { grid-column: 1 / -1; padding: 26px 4px; color: var(--muted);
+    font-family: "JetBrains Mono", monospace; font-size: .82rem; letter-spacing: .04em; }
+  @media (max-width: 760px) { .bargain-grid { grid-template-columns: 1fr; } }
+</style>
+<style>
   /* scheduled-release poster bits */
   .poster-art .date-chip { position:absolute; bottom:10px; right:10px; z-index:2;
     background:rgba(10,13,18,.82); border:1px solid var(--signal-dim); color:var(--signal);
@@ -69,6 +92,17 @@
         </div>
       </div>
       <div class="rail-track" id="rail-lastmonth"></div>
+    </section>
+
+    <!-- BARGAIN FINDS: discounted 85+ games (top 3, only shows when there are deals) -->
+    <section class="rail" id="bargain-section" style="display:none;">
+      <div class="rail-head">
+        <div>
+          <h3>Bargain Finds</h3>
+          <div class="sub">Great games (85+) on sale right now.</div>
+        </div>
+      </div>
+      <div class="bargain-grid" id="bargain-grid"></div>
     </section>
 
     <!-- RAIL 2: Scheduled releases (upcoming) -->
@@ -183,6 +217,36 @@
     const t = document.getElementById(id);
     items.forEach(it => t.appendChild(posterCard(it)));
   }
+
+  // Wide deal card for the Bargain Finds block.
+  function bargainCard(g){
+    const a = document.createElement("a");
+    a.className = "bargain";
+    a.href = g.url || "#";
+    if (g.url){ a.target = "_blank"; a.rel = "noopener"; }
+    const cands = posterCover({ cover:g.cover, steam:g.steam });
+    const img = cands.length ? `<img src="${esc(cands[0])}" alt="" loading="lazy" decoding="async">` : ``;
+    a.innerHTML = `
+      <div class="b-art">
+        <span class="deal-ribbon">-${g.discount}%</span>
+        ${img}
+      </div>
+      <div class="b-body">
+        <span class="score-chip ${tierClass(g.score)} b-score"><span class="n">${g.score}</span></span>
+        <div class="b-title">${esc(g.game)}</div>
+        <div class="b-meta">${esc(g.meta || "")}</div>
+        <div class="b-price"><span class="b-now">${esc(g.price)}</span><span class="b-was">${esc(g.origPrice)}</span></div>
+      </div>`;
+    const el = a.querySelector(".b-art img");
+    if (el){
+      const alts = cands.slice(1);
+      el.addEventListener("error", function h(){
+        if (alts.length) { el.src = alts.shift(); }
+        else { el.style.display = "none"; el.removeEventListener("error", h); }
+      });
+    }
+    return a;
+  }
   const MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   const dateLabel = g => ((g.month ? MON[g.month-1] : "") + (g.day ? " " + g.day : "")).trim();
   const shortPlat = p => { const a = String(p||"").split(/[,|]/).map(x=>x.trim()).filter(Boolean);
@@ -240,6 +304,25 @@
       railRecent.innerHTML = "";
       if (recent.length) recent.forEach(it => railRecent.appendChild(posterCard(it)));
       else railRecent.innerHTML = '<div style="padding:28px 4px; color:var(--muted); font-family:\'JetBrains Mono\',monospace; font-size:.78rem; letter-spacing:.06em;">No scored releases in the last 30 days yet. Check back soon.</div>';
+
+      // Bargain Finds: scored 85+, currently discounted, best discount first, top 3.
+      const bargains = data
+        .filter(g => g.official && g.score >= 85 && (Number(g.discount) || 0) > 0
+                     && g.origPrice && String(g.origPrice).trim() !== String(g.price).trim())
+        .sort((a, b) => b.discount - a.discount || b.score - a.score)
+        .slice(0, 3);
+      const bargainSection = document.getElementById("bargain-section");
+      const bargainGrid = document.getElementById("bargain-grid");
+      bargainSection.style.display = "";
+      if (bargains.length) {
+        bargainGrid.innerHTML = "";
+        bargains.forEach(g => bargainGrid.appendChild(bargainCard({
+          game:g.game, score:g.score, price:g.price, origPrice:g.origPrice, discount:g.discount,
+          meta: dateLabel(g) || String(g.year), url:g.url, steam:g.steam, cover:g.cover
+        })));
+      } else {
+        bargainGrid.innerHTML = '<div class="bargain-empty">No bargain deals right now!</div>';
+      }
 
       const yr = now.getFullYear();
       const top = data
