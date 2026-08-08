@@ -174,6 +174,13 @@
         </div>
 
         <div class="f-sec">
+          <span class="f-label">Genre</span>
+          <div class="f-row">
+            <select class="fsel" id="selGenre"></select>
+          </div>
+        </div>
+
+        <div class="f-sec">
           <span class="f-label">Price</span>
           <div class="f-row">
             <select class="fsel" id="selPrice">
@@ -267,6 +274,7 @@
   const selYear = document.getElementById("selYear");
   const selMonth = document.getElementById("selMonth");
   const selPlatform = document.getElementById("selPlatform");
+  const selGenre = document.getElementById("selGenre");
   const fSearch = document.getElementById("fSearch");
   const selPrice = document.getElementById("selPrice");
   const selLength = document.getElementById("selLength");
@@ -276,7 +284,7 @@
   let ALL = [];
   const CURRENT_YEAR = new Date().getFullYear();
   // Defaults: hide ports & EA, top 25, current year, all months, all-time window.
-  const DEFAULTS = { port: "hide", ea: "hide", count: "25", year: "all", month: "all", window: "all", platform: "all", price: "all", length: "all", q: "" };
+  const DEFAULTS = { port: "hide", ea: "hide", count: "25", year: "all", month: "all", window: "all", platform: "all", genre: "all", price: "all", length: "all", q: "" };
   const state = Object.assign({}, DEFAULTS);
 
   const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));
@@ -471,6 +479,7 @@
   function passes(g) {
     if (state.q && (!window.ScoutedSearch || ScoutedSearch.score(g.game, state.q) <= 0)) return false;
     if (state.platform !== "all" && !platformFamilies(g.platforms).includes(state.platform)) return false;
+    if (state.genre !== "all" && !hasGenre(g, state.genre)) return false;
     if (!passesPrice(g)) return false;
     if (!passesLength(g)) return false;
     if (state.port === "only" && !g.port) return false;
@@ -527,6 +536,30 @@
 
   // ---- year dropdown (auto-enable years that have data) --------------
   // Only list families that actually appear in the data.
+  // Genres come from col Q as a comma list. Parse forgivingly (trim, drop blanks).
+  const GENRE_STOPLIST = new Set(["early access", "free to play"]);
+  function gameGenres(g) {
+    return String(g.genres || "").split(/[,;|]/).map(x => x.trim()).filter(Boolean);
+  }
+  function hasGenre(g, name) {
+    const want = name.toLowerCase();
+    return gameGenres(g).some(x => x.toLowerCase() === want);
+  }
+  // Build the dropdown from genres actually present, minus the stoplist, A->Z.
+  function buildGenres() {
+    const seen = new Map();   // lowercase -> display spelling (first seen)
+    ALL.forEach(g => gameGenres(g).forEach(x => {
+      const k = x.toLowerCase();
+      if (GENRE_STOPLIST.has(k)) return;
+      if (!seen.has(k)) seen.set(k, x);
+    }));
+    const names = [...seen.values()].sort((a, b) => a.localeCompare(b));
+    let html = '<option value="all">All genres</option>';
+    names.forEach(n => { html += '<option value="' + n + '">' + n + '</option>'; });
+    selGenre.innerHTML = html;
+    selGenre.value = state.genre;
+  }
+
   function buildPlatforms() {
     const present = new Set();
     ALL.forEach(g => platformFamilies(g.platforms).forEach(f => present.add(f)));
@@ -567,6 +600,12 @@
       const match = PLATFORM_FAMILIES.find(f => f[0].toLowerCase() === plat.toLowerCase());
       state.platform = match ? match[0] : "all";
     }
+    const gp = p.get("genre");
+    if (gp) {
+      const match = ALL.map(g => gameGenres(g)).flat()
+        .find(x => x.toLowerCase() === gp.toLowerCase() && !GENRE_STOPLIST.has(x.toLowerCase()));
+      state.genre = match || "all";
+    }
     seg("price",  ["all", "free", "u10", "u20", "u40", "40up"]);
     seg("length", ["all", "u10", "10to25", "25to50", "50up"]);
     const y = p.get("year");  if (y && (y === "all" || /^20\d\d$/.test(y))) state.year = y;
@@ -596,6 +635,7 @@
   selYear.addEventListener("change", () => { state.year = selYear.value; render(); });
   selMonth.addEventListener("change", () => { state.month = selMonth.value; render(); });
   selPlatform.addEventListener("change", () => { state.platform = selPlatform.value; render(); });
+  selGenre.addEventListener("change", () => { state.genre = selGenre.value; render(); });
   fSearch.addEventListener("input", () => {
     state.q = fSearch.value;
     // While searching, widen scope so a hit in another month/year still shows.
@@ -608,7 +648,7 @@
   document.getElementById("reset").addEventListener("click", () => {
     Object.assign(state, DEFAULTS);
     syncSegs(); syncWindow();
-    selYear.value = state.year; selMonth.value = "all"; selPlatform.value = "all"; selPrice.value = "all"; selLength.value = "all"; fSearch.value = "";
+    selYear.value = state.year; selMonth.value = "all"; selPlatform.value = "all"; selGenre.value = "all"; selPrice.value = "all"; selLength.value = "all"; fSearch.value = "";
     render();
   });
 
@@ -623,11 +663,13 @@
       ALL = data;
       buildYears();
       buildPlatforms();
+      buildGenres();
       applyUrlParams();
       syncSegs();
       selYear.value = state.year;
       selMonth.value = state.month;
       selPlatform.value = state.platform;
+      selGenre.value = state.genre;
       selPrice.value = state.price;
       selLength.value = state.length;
       syncWindow();
