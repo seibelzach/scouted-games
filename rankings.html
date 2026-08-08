@@ -145,6 +145,14 @@
         <div class="f-sec">
           <span class="f-label">Type</span>
           <div class="f-row">
+            <div class="f-name">Status</div>
+            <div class="seg" data-filter="status">
+              <button type="button" data-val="ranked" class="active">Ranked</button>
+              <button type="button" data-val="unranked">TBD</button>
+              <button type="button" data-val="all">All</button>
+            </div>
+          </div>
+          <div class="f-row">
             <div class="f-name">Ports &amp; Remasters</div>
             <div class="seg" data-filter="port">
               <button type="button" data-val="all">All</button>
@@ -284,7 +292,7 @@
   let ALL = [];
   const CURRENT_YEAR = new Date().getFullYear();
   // Defaults: hide ports & EA, top 25, current year, all months, all-time window.
-  const DEFAULTS = { port: "hide", ea: "hide", count: "25", year: "all", month: "all", window: "all", platform: "all", genre: "all", price: "all", length: "all", q: "" };
+  const DEFAULTS = { status: "ranked", port: "hide", ea: "hide", count: "25", year: "all", month: "all", window: "all", platform: "all", genre: "all", price: "all", length: "all", q: "" };
   const state = Object.assign({}, DEFAULTS);
 
   const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));
@@ -502,36 +510,48 @@
       items.sort((a, b) => ScoutedSearch.score(b.game, state.q) - ScoutedSearch.score(a.game, state.q));
     }
     const scored = items.filter(g => g.official).sort((a, b) => b.score - a.score);
-    const tbd    = items.filter(g => !g.official && g.score != null).sort((a, b) => b.score - a.score);
+    // Everything not officially ranked is "TBD" to the visitor, whether it has a
+    // ghost score under the hood or no score at all. Ghost-scored ones sort first
+    // (by their provisional number), then the truly unscored, alphabetically.
+    const tbd = items.filter(g => !g.official).sort((a, b) => {
+      const as = a.score, bs = b.score;
+      if (as != null && bs != null) return bs - as;
+      if (as != null) return -1;
+      if (bs != null) return 1;
+      return a.game.localeCompare(b.game);
+    });
 
     const showAll = state.count === "all";
+    const wantRanked = state.status === "ranked" || state.status === "all";
+    const wantTbd    = state.status === "unranked" || state.status === "all";
+
+    // Ranked list obeys the Show count; TBD is a full list (its own section).
     const limit = showAll ? scored.length : Number(state.count);
-    const shown = scored.slice(0, limit);
-    const willShowTbd = showAll && tbd.length;
+    const shownScored = wantRanked ? scored.slice(0, limit) : [];
+    const shownTbd = wantTbd ? tbd : [];
 
     grid.innerHTML = "";
-    if (!shown.length && !willShowTbd) {
-      grid.innerHTML = '<div class="empty">No ranked games match these filters.</div>';
-      meta.textContent = "0 ranked";
+    if (!shownScored.length && !shownTbd.length) {
+      grid.innerHTML = '<div class="empty">No games match these filters.</div>';
+      meta.textContent = "0 games";
       return;
     }
 
     let i = 0;
-    shown.forEach((g, idx) => grid.appendChild(scoredCard(g, idx + 1, Math.min(i++, 24) * 28)));
-    if (willShowTbd) {
-      grid.appendChild(divider("Awaiting scores"));
-      tbd.forEach(g => grid.appendChild(tbdCard(g, Math.min(i++, 24) * 28)));
+    shownScored.forEach((g, idx) => grid.appendChild(scoredCard(g, idx + 1, Math.min(i++, 24) * 28)));
+    if (shownTbd.length) {
+      // Only show the divider when ranked games sit above the TBD block.
+      if (shownScored.length) grid.appendChild(divider("Awaiting scores"));
+      shownTbd.forEach(g => grid.appendChild(tbdCard(g, Math.min(i++, 24) * 28)));
     }
 
     const stamp = " · updated " + new Date().toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
-    if (showAll) {
-      const parts = [];
-      if (scored.length) parts.push(scored.length + " ranked");
-      if (tbd.length) parts.push(tbd.length + " TBD");
-      meta.textContent = parts.join(" · ") + stamp;
-    } else {
-      meta.textContent = "Top " + shown.length + " of " + scored.length + " ranked" + stamp;
+    const parts = [];
+    if (wantRanked) {
+      parts.push(showAll ? scored.length + " ranked" : "Top " + shownScored.length + " of " + scored.length + " ranked");
     }
+    if (wantTbd && tbd.length) parts.push(tbd.length + " TBD");
+    meta.textContent = (parts.join(" · ") || "0 games") + stamp;
   }
 
   // ---- year dropdown (auto-enable years that have data) --------------
@@ -606,6 +626,7 @@
         .find(x => x.toLowerCase() === gp.toLowerCase() && !GENRE_STOPLIST.has(x.toLowerCase()));
       state.genre = match || "all";
     }
+    seg("status", ["ranked", "unranked", "all"]);
     seg("price",  ["all", "free", "u10", "u20", "u40", "40up"]);
     seg("length", ["all", "u10", "10to25", "25to50", "50up"]);
     const y = p.get("year");  if (y && (y === "all" || /^20\d\d$/.test(y))) state.year = y;
