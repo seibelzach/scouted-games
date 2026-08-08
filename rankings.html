@@ -17,6 +17,11 @@
 
   .filters {
     position:sticky; top:calc(var(--nav-h) + 16px);
+    /* never taller than the screen: on short laptops the lower filters
+       (Show, Release window, Year) stay reachable via the sidebar's own
+       scroll instead of being stranded below the fold. */
+    max-height:calc(100vh - var(--nav-h) - 32px); overflow-y:auto;
+    scrollbar-width:thin; scrollbar-color:var(--line) transparent;
     background:linear-gradient(180deg,var(--surface),var(--bg-2));
     border:1px solid var(--line); border-radius:var(--radius); padding:18px 18px 20px;
   }
@@ -83,7 +88,7 @@
 
   @media (max-width:900px) {
     .layout { grid-template-columns:1fr; gap:14px; }
-    .filters { position:static; display:none; }
+    .filters { position:static; display:none; max-height:none; overflow:visible; }
     .filt-toggle:checked ~ .filters { display:block; }
     /* tapping the bar opens the panel instead of burying the games */
     .filt-bar { display:flex; align-items:center; justify-content:space-between; gap:10px;
