@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Site Feedback — Scouted</title>
+<meta name="description" content="Report a bug or share feedback on Scouted." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/styles.css" />
+<script src="/wishlist.js"></script>
+<script src="/search.js"></script>
+<style>
+  .fb-wrap { max-width: 640px; }
+  .fb-form { display: flex; flex-direction: column; gap: 18px; margin-top: 8px; }
+  .fb-field { display: flex; flex-direction: column; gap: 7px; }
+  .fb-field label { font-family: "JetBrains Mono", monospace; font-size: .68rem; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--muted); }
+  .fb-field .opt { color: var(--faint); text-transform: none; letter-spacing: .02em; }
+  .fb-input, .fb-textarea { width: 100%; background: var(--surface); color: var(--text);
+    border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px;
+    font-family: "Hanken Grotesk", sans-serif; font-size: .95rem; }
+  .fb-input:focus, .fb-textarea:focus { outline: none; border-color: var(--signal-dim); }
+  .fb-input::placeholder, .fb-textarea::placeholder { color: var(--faint); }
+  .fb-textarea { min-height: 150px; resize: vertical; line-height: 1.5; }
+  .fb-count { font-family: "JetBrains Mono", monospace; font-size: .62rem; color: var(--faint); align-self: flex-end; }
+  .fb-actions { display: flex; align-items: center; gap: 14px; }
+  .fb-submit { background: var(--signal); color: #06121e; border: none; border-radius: 10px;
+    padding: 12px 22px; font-family: "Chakra Petch", sans-serif; font-weight: 700; font-size: .9rem;
+    letter-spacing: .04em; text-transform: uppercase; cursor: pointer; transition: filter .15s, opacity .15s; }
+  .fb-submit:hover { filter: brightness(1.08); }
+  .fb-submit:disabled { opacity: .5; cursor: default; }
+  .fb-note { font-family: "Hanken Grotesk", sans-serif; font-size: .82rem; color: var(--muted); }
+  .fb-error { color: var(--tier-red); font-size: .85rem; min-height: 1em; }
+  /* Honeypot: off-screen, not display:none (some bots skip hidden fields) */
+  .fb-hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+  .fb-done { text-align: center; padding: 40px 16px; }
+  .fb-done .big { font-family: "Chakra Petch", sans-serif; font-weight: 700; font-size: 1.25rem; color: var(--text); margin-bottom: 10px; }
+  .fb-done p { color: var(--muted); line-height: 1.7; max-width: 44ch; margin: 0 auto 20px; }
+  .fb-again { background: none; border: 1px solid var(--line); color: var(--muted); border-radius: 9px;
+    padding: 9px 16px; cursor: pointer; font-family: "JetBrains Mono", monospace; font-size: .64rem;
+    letter-spacing: .08em; text-transform: uppercase; }
+  .fb-again:hover { color: var(--text); border-color: var(--signal-dim); }
+  @media (max-width: 560px) { .fb-actions { flex-direction: column; align-items: stretch; } .fb-submit { width: 100%; } }
+</style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="brand" href="/">
+        <span class="mark" aria-hidden="true"></span>
+        <span>
+          <h1>SCOUTED<span class="dot">.</span></h1>
+          <span class="tagline">Know what's worth playing</span>
+        </span>
+      </a>
+      <button class="nav-search" data-search-open aria-label="Search games" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><span class="lbl">Search</span><span class="kbd">/</span></button>
+      <input type="checkbox" id="navToggle" class="nav-toggle" aria-hidden="true" tabindex="-1">
+      <label class="nav-burger" for="navToggle" aria-label="Menu"><span></span><span></span><span></span></label>
+      <div class="nav-links">
+        <a class="nav-link" href="/">Home</a>
+        <a class="nav-link" href="/rankings.html">Rankings</a>
+        <a class="nav-link" href="/schedule.html">Schedule</a>
+        <a class="nav-link" href="/free.html">Free Games</a>
+        <a class="nav-link" href="/methodology.html">How We Score</a>
+        <a class="nav-link active" href="/feedback.html">Site Feedback</a>
+        <a class="nav-link nav-wish" href="/wishlist.html" title="Wishlist" aria-label="Wishlist"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg><span class="wish-count" data-wish-count style="display:none"></span></a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="wrap fb-wrap">
+    <section class="intro">
+      <div class="eyebrow">Help us out</div>
+      <h2>Site <em>feedback</em>.</h2>
+      <p>Found a bug, a wrong score, a broken cover, or just have a thought? Tell us here. This goes straight to the person who runs Scouted. Leave an email if you're open to a follow-up question.</p>
+    </section>
+
+    <div id="fb-live">
+      <div class="fb-form">
+        <div class="fb-field">
+          <label for="fbComment">Your feedback</label>
+          <textarea id="fbComment" class="fb-textarea" maxlength="4000" placeholder="What happened, or what's on your mind?"></textarea>
+          <span class="fb-count" id="fbCount">0 / 4000</span>
+        </div>
+
+        <div class="fb-field">
+          <label for="fbEmail">Email <span class="opt">— optional, for follow-up</span></label>
+          <input type="email" id="fbEmail" class="fb-input" placeholder="you@example.com" autocomplete="email">
+        </div>
+
+        <!-- honeypot: humans never see or fill this -->
+        <div class="fb-hp" aria-hidden="true">
+          <label>Leave this empty<input type="text" id="fbWebsite" tabindex="-1" autocomplete="off"></label>
+        </div>
+
+        <div class="fb-error" id="fbError"></div>
+
+        <div class="fb-actions">
+          <button class="fb-submit" id="fbSubmit" type="button">Send feedback</button>
+          <span class="fb-note">No account needed. We don't display submissions publicly.</span>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="mono">SCOUTED // feedback</div>
+      <p style="margin-top:8px;">Thanks for helping make Scouted better.</p>
+    </footer>
+  </div>
+
+<script>
+  // Paste your Apps Script Web App /exec URL here after deploying scouted-feedback-webapp.gs
+  const FEEDBACK_URL = "PASTE_YOUR_WEB_APP_EXEC_URL_HERE";
+
+  const comment = document.getElementById("fbComment");
+  const email   = document.getElementById("fbEmail");
+  const website = document.getElementById("fbWebsite");
+  const count   = document.getElementById("fbCount");
+  const errEl   = document.getElementById("fbError");
+  const submit  = document.getElementById("fbSubmit");
+  const live    = document.getElementById("fb-live");
+
+  comment.addEventListener("input", () => { count.textContent = comment.value.length + " / 4000"; });
+
+  const looksLikeEmail = s => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
+
+  function showThanks() {
+    live.innerHTML =
+      '<div class="fb-done"><div class="big">Got it — thank you.</div>' +
+      '<p>Your feedback landed with the Scouted team. If you left an email, we might reach out with a question.</p>' +
+      '<button class="fb-again" id="fbAgain" type="button">Send another</button></div>';
+    document.getElementById("fbAgain").addEventListener("click", () => location.reload());
+  }
+
+  submit.addEventListener("click", async () => {
+    errEl.textContent = "";
+    const c = comment.value.trim();
+    const em = email.value.trim();
+
+    if (!c) { errEl.textContent = "Please add a comment before sending."; comment.focus(); return; }
+    if (em && !looksLikeEmail(em)) { errEl.textContent = "That email doesn't look right — fix it or leave it blank."; email.focus(); return; }
+
+    submit.disabled = true;
+    submit.textContent = "Sending…";
+
+    // Apps Script web apps don't send CORS headers, so we post as a simple form
+    // with no-cors. We can't read the response, so we optimistically confirm on
+    // a completed request; genuine failures (offline) fall to the catch.
+    try {
+      const body = new URLSearchParams({ comment: c, email: em, website: website.value || "" });
+      await fetch(FEEDBACK_URL, { method: "POST", mode: "no-cors", body });
+      showThanks();
+    } catch (e) {
+      submit.disabled = false;
+      submit.textContent = "Send feedback";
+      errEl.textContent = "Couldn't send just now — please check your connection and try again.";
+    }
+  });
+</script>
+</body>
+</html>
