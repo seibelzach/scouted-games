@@ -46,6 +46,10 @@
   .poster-art .poster-fallback { position:absolute; inset:0; display:none; align-items:center; justify-content:center;
     text-align:center; padding:12px; font-family:"Chakra Petch",sans-serif; font-weight:700; font-size:.9rem;
     line-height:1.25; color:var(--muted); background:linear-gradient(160deg,var(--surface-2),var(--bg-2)); }
+  /* platform line on the ranked rails (Recently Released, Top of 2026) —
+     same dotted small-caps look the schedule banner uses for its platforms. */
+  .poster-plat { font-family:"JetBrains Mono",monospace; font-size:.6rem; letter-spacing:.08em;
+    text-transform:uppercase; color:var(--muted); margin-top:-3px; }
 </style>
 </head>
 <body>
@@ -160,10 +164,12 @@
     "Ghostlight Atlas","Cinder & Salt","Halcyon Drive","Echoes of Vesper","Solstice Engine"];
 
   const LAST_MONTH = Array.from({length:10}, (_,i) => ({
-    rank: i+1, title: POOL[i], score: 94 - i*2, meta: "PC · Console"
+    rank: i+1, title: POOL[i], score: 94 - i*2,
+    meta: (["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][i%12] + " " + ((i*3)%27 + 1)),
+    platforms: "PC · Console"
   }));
   const YTD = Array.from({length:10}, (_,i) => ({
-    rank: i+1, title: POOL[(i+5)%POOL.length], score: 96 - i, meta: "2026"
+    rank: i+1, title: POOL[(i+5)%POOL.length], score: 96 - i, platforms: "PC · Console"
   }));
 
   /* ===== Year label ===== */
@@ -204,7 +210,8 @@
         ${img}
       </div>
       <div class="poster-title">${esc(item.title)}</div>
-      <div class="poster-meta">${esc(item.meta || "")}</div>`;
+      ${item.meta ? `<div class="poster-meta">${esc(item.meta)}</div>` : ``}
+      ${item.platforms ? `<div class="poster-plat">${esc(item.platforms)}</div>` : ``}`;
     const el = a.querySelector("img.cover");
     if (el){
       const alts = cands.slice(1);
@@ -306,7 +313,7 @@
         .filter(g => { const d = new Date(g.year, g.month - 1, g.day); return d >= cutoff && d <= now; })
         .sort((a, b) => b.score - a.score)
         .slice(0, 10)
-        .map((g, i) => ({ rank:i+1, title:g.game, score:g.score, meta:dateLabel(g), url:g.url, steam:g.steam, cover:g.cover }));
+        .map((g, i) => ({ rank:i+1, title:g.game, score:g.score, meta:dateLabel(g), platforms:shortPlat(g.platforms), url:g.url, steam:g.steam, cover:g.cover }));
       railRecent.innerHTML = "";
       if (recent.length) recent.forEach(it => railRecent.appendChild(posterCard(it)));
       else railRecent.innerHTML = '<div style="padding:28px 4px; color:var(--muted); font-family:\'JetBrains Mono\',monospace; font-size:.78rem; letter-spacing:.06em;">No scored releases in the last 30 days yet. Check back soon.</div>';
@@ -337,7 +344,7 @@
         .filter(g => g.official && !g.port && !g.ea && g.year === yr)
         .sort((a, b) => b.score - a.score)
         .slice(0, 10)
-        .map((g, i) => ({ rank:i+1, title:g.game, score:g.score, meta:String(g.year), url:g.url, steam:g.steam, cover:g.cover }));
+        .map((g, i) => ({ rank:i+1, title:g.game, score:g.score, platforms:shortPlat(g.platforms), url:g.url, steam:g.steam, cover:g.cover }));
       railYtd.innerHTML = "";
       (top.length ? top : YTD).forEach(it => railYtd.appendChild(posterCard(it)));
 
